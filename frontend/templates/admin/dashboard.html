@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Avitacare</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+<div class="container mt-2">
+  <h1>Admin Dashboard</h1>
+  <p class="text-muted">Caregiver verification and platform oversight.</p>
+
+  <div class="card mt-3">
+    <h2>Pending Verifications</h2>
+    <div id="pending-list" class="mt-2">Loading…</div>
+  </div>
+
+  <div class="card mt-3">
+    <h2>Audit Log</h2>
+    <div id="audit-list" class="mt-2">Loading…</div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  requireAuth();
+
+  async function loadDashboard() {
+    const [pending, logs] = await Promise.all([
+      apiFetch('/admin-portal/pending-verifications/'),
+      apiFetch('/admin-portal/audit-logs/'),
+    ]);
+
+    const pendingEl = document.getElementById('pending-list');
+    pendingEl.innerHTML = pending.length
+      ? pending.map(c => `
+          <div class="card mt-1">
+            <strong>${c.user_name}</strong> — ${c.location}
+            <div style="float:right;">
+              <button class="btn btn-success" onclick="verifyCaregiver(${c.id}, 'approve')">Approve</button>
+              <button class="btn btn-danger" onclick="verifyCaregiver(${c.id}, 'reject')" style="margin-left:.5rem">Reject</button>
+            </div>
+            <p class="text-muted mt-1">Experience: ${c.years_experience} yrs · Skills: ${(c.skills || []).join(', ')}</p>
+          </div>`).join('')
+      : '<p class="text-muted">No pending verifications.</p>';
+
+    const auditEl = document.getElementById('audit-list');
+    auditEl.innerHTML = logs.length
+      ? `<table style="width:100%; border-collapse:collapse; font-size:.875rem;">
+           <thead><tr>
+             <th style="text-align:left;padding:.4rem;">Time</th>
+             <th style="text-align:left;padding:.4rem;">Admin</th>
+             <th style="text-align:left;padding:.4rem;">Action</th>
+             <th style="text-align:left;padding:.4rem;">Target</th>
+           </tr></thead>
+           <tbody>
+             ${logs.map(l => `<tr>
+               <td style="padding:.4rem;">${new Date(l.timestamp).toLocaleString()}</td>
+               <td style="padding:.4rem;">${l.admin_email}</td>
+               <td style="padding:.4rem;">${l.action}</td>
+               <td style="padding:.4rem;">${l.target_email || '—'}</td>
+             </tr>`).join('')}
+           </tbody>
+         </table>`
+      : '<p class="text-muted">No actions logged yet.</p>';
+  }
+
+  async function verifyCaregiver(id, action) {
+    await apiFetch(`/admin-portal/verify-caregiver/${id}/`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
+    loadDashboard();
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

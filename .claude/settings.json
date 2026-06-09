@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"# avitacare\")",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git log *)",
+      "Bash(git rebase *)",
+      "Bash(git filter-branch *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"/Co-Authored-By/d\"' 1cef2a2..HEAD)",
+      "Bash(git -C \"c:\\\\Users\\\\Moses\\\\Desktop\\\\Projects\\\\Avitacare\" filter-branch -f --msg-filter 'python -c \"import sys; print\\(\\\\\"\\\\n\\\\\".join\\(l for l in sys.stdin.read\\(\\).splitlines\\(\\) if \\\\\"Co-Authored-By\\\\\" not in l\\).rstrip\\(\\)\\)\"' 1cef2a2..HEAD)",
+      "Bash(git reset *)",
+      "Bash(git stash *)",
+      "Bash(git init *)"
+    ]
+  }
+}

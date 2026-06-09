@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caregiver Dashboard — Avitacare</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+<!-- TODO: include nav from base.html or refactor to a component -->
+
+<div class="container mt-2">
+  <h1>Welcome, <span id="user-name"></span></h1>
+  <p class="text-muted">Manage your bookings and profile from here.</p>
+
+  <div class="grid-3 mt-3">
+    <div class="card text-center">
+      <h3 id="stat-bookings">—</h3>
+      <p class="text-muted">Active Bookings</p>
+    </div>
+    <div class="card text-center">
+      <h3 id="stat-rating">—</h3>
+      <p class="text-muted">Average Rating</p>
+    </div>
+    <div class="card text-center">
+      <h3 id="stat-reviews">—</h3>
+      <p class="text-muted">Total Reviews</p>
+    </div>
+  </div>
+
+  <div class="card mt-3">
+    <h2>My Bookings</h2>
+    <div id="bookings-list" class="mt-2">Loading…</div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  document.getElementById('user-name').textContent = user?.first_name || '';
+
+  async function loadDashboard() {
+    const [bookings, profile] = await Promise.all([
+      apiFetch('/bookings/'),
+      apiFetch('/caregivers/my-profile/'),
+    ]);
+
+    document.getElementById('stat-bookings').textContent =
+      bookings.filter(b => b.status === 'ongoing' || b.status === 'confirmed').length;
+    document.getElementById('stat-rating').textContent =
+      parseFloat(profile.avg_rating).toFixed(1);
+    document.getElementById('stat-reviews').textContent = profile.total_reviews;
+
+    const list = document.getElementById('bookings-list');
+    list.innerHTML = bookings.length
+      ? bookings.map(b => `
+          <div class="card mt-1">
+            <strong>${b.family_name}</strong>
+            <span class="badge badge-${b.status === 'completed' ? 'verified' : 'pending'}" style="float:right">${b.status}</span>
+            <p class="text-muted">${b.scheduled_start} → ${b.scheduled_end}</p>
+          </div>`).join('')
+      : '<p class="text-muted">No bookings yet.</p>';
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

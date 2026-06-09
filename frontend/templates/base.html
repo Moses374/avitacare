@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avitacare</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="/">Avitacare</a>
+  <div class="nav-links" id="nav-links">
+    <!-- Populated by JS based on role -->
+  </div>
+</nav>
+
+<main class="container mt-2">
+  <!-- Page content goes here -->
+</main>
+
+<script src="/static/js/app.js"></script>
+<script>
+  // Populate nav links based on logged-in role
+  const user = getUser();
+  const navLinks = document.getElementById('nav-links');
+  if (user) {
+    const roleLinks = {
+      caregiver: '<a href="/caregiver/dashboard.html">Dashboard</a><a href="/caregiver/profile.html">My Profile</a>',
+      family:    '<a href="/family/dashboard.html">Dashboard</a><a href="/family/request.html">New Request</a>',
+      admin:     '<a href="/admin/dashboard.html">Dashboard</a><a href="/admin/verifications.html">Verifications</a>',
+    };
+    navLinks.innerHTML = (roleLinks[user.role] || '') + '<a href="#" onclick="logout()">Logout</a>';
+  } else {
+    navLinks.innerHTML = '<a href="/login.html">Login</a><a href="/register.html">Register</a>';
+  }
+</script>
+</body>
+</html>

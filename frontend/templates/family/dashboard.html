@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Family Dashboard — Avitacare</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+<div class="container mt-2">
+  <h1>Welcome, <span id="user-name"></span></h1>
+  <p class="text-muted">Submit care requests and manage your bookings.</p>
+
+  <div style="margin-top:1rem;">
+    <a href="/family/request.html" class="btn btn-primary">+ New Service Request</a>
+  </div>
+
+  <div class="card mt-3">
+    <h2>My Service Requests</h2>
+    <div id="requests-list" class="mt-2">Loading…</div>
+  </div>
+
+  <div class="card mt-3">
+    <h2>My Bookings</h2>
+    <div id="bookings-list" class="mt-2">Loading…</div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  requireAuth();
+  document.getElementById('user-name').textContent = getUser()?.first_name || '';
+
+  async function loadDashboard() {
+    const [requests, bookings] = await Promise.all([
+      apiFetch('/requests/'),
+      apiFetch('/bookings/'),
+    ]);
+
+    const reqList = document.getElementById('requests-list');
+    reqList.innerHTML = requests.length
+      ? requests.map(r => `
+          <div class="card mt-1">
+            <strong>${r.care_type.replace('_', ' ')}</strong>
+            <span class="badge badge-${r.status === 'open' ? 'pending' : 'verified'}" style="float:right">${r.status}</span>
+            <p class="text-muted">${r.location} · ${r.urgency_level} urgency</p>
+            ${r.status === 'open'
+              ? `<a href="/family/matches.html?request_id=${r.id}" class="btn btn-outline mt-1">View Matches</a>`
+              : ''}
+          </div>`).join('')
+      : '<p class="text-muted">No service requests yet.</p>';
+
+    const bkList = document.getElementById('bookings-list');
+    bkList.innerHTML = bookings.length
+      ? bookings.map(b => `
+          <div class="card mt-1">
+            <strong>${b.caregiver_name}</strong>
+            <span class="badge badge-${b.status === 'completed' ? 'verified' : 'pending'}" style="float:right">${b.status}</span>
+            <p class="text-muted">${b.scheduled_start} → ${b.scheduled_end}</p>
+            ${b.status === 'completed'
+              ? `<a href="/family/review.html?booking_id=${b.id}" class="btn btn-outline mt-1">Leave Review</a>`
+              : ''}
+          </div>`).join('')
+      : '<p class="text-muted">No bookings yet.</p>';
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
