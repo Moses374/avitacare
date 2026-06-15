@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - AvitaCare</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+<div class="dashboard-layout">
+  <h1 id="welcome-heading">Loading...</h1>
+  <button class="btn-ghost" id="signout-btn">Sign out</button>
+</div>
+
+<script type="module">
+  import { getProfile, logout, clearTokens } from '../api/auth.js';
+
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    window.location.replace('login.html');
+  }
+
+  async function loadProfile() {
+    try {
+      const user = await getProfile();
+      document.getElementById('welcome-heading').textContent = `Welcome back, ${user.first_name}`;
+    } catch {
+      document.getElementById('welcome-heading').textContent = 'Welcome back';
+    }
+  }
+
+  loadProfile();
+
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    const refresh = localStorage.getItem('refresh_token');
+    try {
+      await logout(refresh);
+    } catch {
+      // proceed with local cleanup regardless
+    }
+    clearTokens();
+    localStorage.removeItem('user_first_name');
+    window.location.replace('login.html');
+  });
+</script>
+</body>
+</html>

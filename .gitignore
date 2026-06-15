@@ -22,6 +22,11 @@ staticfiles/
 
 # Environment variables
 .env
+.env.local
+
+# Node
+node_modules/
+frontend/package-lock.json
 
 # IDE
 .vscode/
