@@ -210,7 +210,7 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 ## Deliverables Tracker
 
 - [x] System Proposal
-- [ ] Authentication Module
+- [x] Authentication Module
 - [ ] Caregiver Profile Module
 - [ ] Family & Service Request Module
 - [ ] Booking & Scheduling Module
