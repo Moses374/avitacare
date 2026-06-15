@@ -98,6 +98,12 @@
     window.location.replace('dashboard.html');
   }
 
+  // Pre-select role from ?role= query param
+  const urlRole = new URLSearchParams(window.location.search).get('role');
+  if (urlRole === 'family' || urlRole === 'caregiver') {
+    document.getElementById('role').value = urlRole;
+  }
+
   document.querySelectorAll('.toggle-password').forEach(btn => {
     btn.addEventListener('click', () => {
       const input = document.getElementById(btn.dataset.target);
