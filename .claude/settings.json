@@ -50,7 +50,14 @@
       "PowerShell(npm run dev)",
       "PowerShell(npx vite *)",
       "Bash(curl -s http://localhost:8000/api/auth/register/ -X POST -H \"Content-Type: application/json\" -d '{\"email\":\"testuser@avitacare.com\",\"first_name\":\"Test\",\"last_name\":\"User\",\"phone_number\":\"0712345678\",\"role\":\"family\",\"password\":\"TestPass123!\",\"password_confirm\":\"TestPass123!\"}')",
-      "Bash(curl -s http://localhost:5173/ -o /dev/null -w \"%{http_code} %{redirect_url}\")"
+      "Bash(curl -s http://localhost:5173/ -o /dev/null -w \"%{http_code} %{redirect_url}\")",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(npm create *)",
+      "PowerShell(npx tailwindcss *)",
+      "PowerShell(npx postcss *)",
+      "Read(//c/Users/Moses/AppData/Local/Temp/**)",
+      "Bash(curl -s http://localhost:5173/ -o /dev/null -w \"%{http_code}\")",
+      "Bash(curl -s http://localhost:5174/src/index.css)"
     ]
   }
 }
