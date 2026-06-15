@@ -29,15 +29,15 @@ The system follows a **three-tier client-server architecture**:
 │                APPLICATION LOGIC LAYER                  │
 │            Python · Django REST Framework               │
 │                                                         │
-│  ┌──────────────┐  ┌────────────────┐  ┌────────────┐  │
-│  │ Auth / RBAC  │  │ Matching Engine│  │Priority    │  │
-│  │ JWT Tokens   │  │ Graph-based    │  │Queue Mgr   │  │
-│  └──────────────┘  └────────────────┘  └────────────┘  │
+│  ┌──────────────┐  ┌────────────────┐  ┌────────────┐   │
+│  │ Auth / RBAC  │  │ Matching Engine│  │Priority    │   │ 
+│  │ JWT Tokens   │  │ Graph-based    │  │Queue Mgr   │   │
+│  └──────────────┘  └────────────────┘  └────────────┘   │
 │                                                         │
-│  ┌──────────────┐  ┌────────────────┐  ┌────────────┐  │
-│  │ Booking      │  │ Caregiver      │  │ Admin      │  │
-│  │ Lifecycle    │  │ Profile Mgmt   │  │ Portal     │  │
-│  └──────────────┘  └────────────────┘  └────────────┘  │
+│  ┌──────────────┐  ┌────────────────┐  ┌────────────┐   │
+│  │ Booking      │  │ Caregiver      │  │ Admin      │   │
+│  │ Lifecycle    │  │ Profile Mgmt   │  │ Portal     │   │
+│  └──────────────┘  └────────────────┘  └────────────┘   │
 └────────────────────────┬────────────────────────────────┘
                          │ ORM (Django)
 ┌────────────────────────▼────────────────────────────────┐
