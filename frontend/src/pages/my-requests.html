@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Requests - AvitaCare</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+  <nav class="app-nav">
+    <a class="app-nav-brand" href="dashboard.html">AvitaCare</a>
+    <div class="app-nav-right">
+      <span class="app-nav-username" id="nav-username"></span>
+      <button class="btn-ghost" id="signout-btn" type="button">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="app-main">
+    <a class="back-link" href="dashboard.html">Back to Dashboard</a>
+
+    <h1 class="page-heading">My Requests</h1>
+
+    <div class="toolbar">
+      <a class="text-link" href="service-request.html">Submit a new request</a>
+    </div>
+
+    <div id="requests-container">
+      <p class="empty-message" id="loading-message">Loading your requests...</p>
+    </div>
+  </main>
+
+  <script type="module" src="my-requests.js"></script>
+</body>
+</html>

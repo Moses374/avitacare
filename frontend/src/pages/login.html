@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In - AvitaCare</title>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+<div class="auth-layout">
+  <!-- Brand Panel -->
+  <div class="auth-brand-panel">
+    <div class="brand-name">AvitaCare</div>
+    <div class="brand-tagline">Connecting families with trusted caregivers across Kenya</div>
+    <div class="brand-illustration">
+      <svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Left hand -->
+        <path d="M30 90 C28 85 26 78 27 70 C28 62 32 58 36 58 C38 58 40 59 41 61 L41 40 C41 36 44 33 47 33 C50 33 53 36 53 40 L53 55 C54 53 56 52 59 52 C62 52 65 55 65 58 L65 62 C66 60 68 59 71 59 C74 59 77 62 77 65 L77 75 C78 74 80 73 82 73 C85 73 88 76 88 79 L88 90 C88 100 80 108 70 108 L50 108 C40 108 32 100 30 90 Z"
+              stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Right hand -->
+        <path d="M130 90 C132 85 134 78 133 70 C132 62 128 58 124 58 C122 58 120 59 119 61 L119 40 C119 36 116 33 113 33 C110 33 107 36 107 40 L107 55 C106 53 104 52 101 52 C98 52 95 55 95 58 L95 62 C94 60 92 59 89 59 C86 59 83 62 83 65 L83 75 C82 74 80 73 78 73 C75 73 72 76 72 79 L72 90 C72 100 80 108 90 108 L110 108 C120 108 128 100 130 90 Z"
+              stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Offering gesture line -->
+        <path d="M59 108 L101 108" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Form Panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-inner">
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in to your account</p>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input class="form-input" type="email" id="email" name="email" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <input class="form-input" type="password" id="password" name="password" autocomplete="current-password" required />
+            <button type="button" class="toggle-password" data-target="password">Show</button>
+          </div>
+        </div>
+
+        <div class="error-banner" id="error-banner" role="alert"></div>
+
+        <button type="submit" class="btn-primary">Sign in</button>
+      </form>
+
+      <p class="auth-link">Don't have an account? <a href="register.html">Register</a></p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { login, saveTokens, isLoggedIn } from '../api/auth.js';
+
+  if (isLoggedIn()) {
+    window.location.replace('dashboard.html');
+  }
+
+  document.querySelectorAll('.toggle-password').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'Hide';
+      } else {
+        input.type = 'password';
+        btn.textContent = 'Show';
+      }
+    });
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorBanner = document.getElementById('error-banner');
+    errorBanner.textContent = '';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const data = await login(email, password);
+      saveTokens(data.access, data.refresh);
+      if (data.user?.first_name) {
+        localStorage.setItem('user_first_name', data.user.first_name);
+      }
+      if (data.user?.role) {
+        localStorage.setItem('user_role', data.user.role);
+      }
+      if (data.user?.full_name) {
+        localStorage.setItem('user_full_name', data.user.full_name);
+      }
+      window.location.replace('dashboard.html');
+    } catch (err) {
+      errorBanner.textContent = err.message || 'Login failed. Please try again.';
+    }
+  });
+</script>
+</body>
+</html>

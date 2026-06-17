@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    container_name: avitacare-db
+    environment:
+      POSTGRES_DB: caregiver_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - avitacare-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d caregiver_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: ./backend
+    container_name: avitacare-web
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      SECRET_KEY: your-secret-key-here
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,web
+      DB_NAME: caregiver_db
+      DB_USER: postgres
+      DB_PASSWORD: yourpassword
+      DB_HOST: db
+      DB_PORT: "5432"
+    # Host 8001 -> container 8000 (host 8000 was already in use by another app).
+    ports:
+      - "8001:8000"
+    # Live-reload backend code edits without rebuilding the image.
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  avitacare-db-data:
