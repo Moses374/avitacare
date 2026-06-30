@@ -1,0 +1,46 @@
+/* Component, typography. Base type patterns reused across every page. */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #ffffff;
+  color: #1a1d21;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  margin: 0;
+}
+
+h1 { font-size: 1.625rem; }
+h2 { font-size: 1.125rem; }
+h3 { font-size: 1rem; }
+
+p { margin: 0; }
+
+a {
+  color: #0b6e6e;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.text-muted {
+  color: #6b7177;
+}
+
+.icon,
+[data-icon] {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+}

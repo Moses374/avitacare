@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.db import models
-from users.models import User
+
+from locations.models import Location
 
 
 class ServiceRequest(models.Model):
@@ -20,10 +22,14 @@ class ServiceRequest(models.Model):
         MATCHED = 'matched', 'Matched'
         CLOSED = 'closed', 'Closed'
 
-    family = models.ForeignKey(User, on_delete=models.CASCADE, related_name='service_requests')
+    family = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='service_requests'
+    )
     care_type = models.CharField(max_length=30, choices=CareType.choices)
     description = models.TextField()
-    location = models.CharField(max_length=200)
+    location = models.ForeignKey(
+        Location, on_delete=models.SET_NULL, null=True, related_name='service_requests'
+    )
     urgency_level = models.CharField(max_length=20, choices=UrgencyLevel.choices, default=UrgencyLevel.MEDIUM)
     required_skills = models.JSONField(default=list)
     schedule_start = models.DateTimeField()
@@ -32,6 +38,7 @@ class ServiceRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'service_requests'
         ordering = ['-urgency_level', '-created_at']
 
     def __str__(self):

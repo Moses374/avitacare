@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Profile, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/components/location-select.css" />
+  <link rel="stylesheet" href="/static/css/pages/caregiver-profile.css" />
+</head>
+<body data-page="/caregiver/profile.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/location-select.js"></script>
+<script>
+  mountAppShell('Profile');
+
+  async function loadProfile() {
+    const profile = await apiFetch('/caregivers/profile/');
+
+    renderInto('page-content', `
+      <div class="section-header"><h1>Profile</h1></div>
+
+      <div class="status status-${profile.verification_status === 'verified' ? 'success' : profile.verification_status === 'rejected' ? 'danger' : 'warning'} profile-status">
+        <span data-icon="shield" data-size="15"></span>
+        Verification status, ${profile.verification_status}
+      </div>
+
+      <div class="section">
+        <div class="section-title">Professional details</div>
+        <div class="section-body padded">
+          <div id="profile-error" class="error-banner"></div>
+          <form id="profile-form" class="profile-form">
+            <div class="form-group">
+              <label for="bio">Bio</label>
+              <textarea id="bio" rows="3">${profile.bio || ''}</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="years_experience">Years of experience</label>
+                <input type="number" id="years_experience" min="0" value="${profile.years_experience || 0}" />
+              </div>
+              ${locationSelectMarkup({ id: 'profile-location', label: 'Location', value: profile.location })}
+            </div>
+            <div class="form-group">
+              <label for="skills">Skills, comma separated</label>
+              <input type="text" id="skills" value="${(profile.skills || []).join(', ')}" />
+            </div>
+            <div class="form-group">
+              <label for="certifications">Certifications, comma separated</label>
+              <input type="text" id="certifications" value="${(profile.certifications || []).join(', ')}" />
+            </div>
+            <div class="form-group">
+              <label class="availability-label"><input type="checkbox" id="is_available" ${profile.is_available ? 'checked' : ''} /> Available for new bookings</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          Verification documents
+          <button class="btn btn-sm" id="upload-doc-btn"><span data-icon="upload" data-size="14"></span>Upload document</button>
+        </div>
+        <div class="section-body" id="documents-list"></div>
+      </div>
+    `);
+
+    const locationSelect = initLocationSelect('profile-location', { value: profile.location });
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError('profile-error');
+      const location = locationSelect.getValue();
+      try {
+        await apiFetch('/caregivers/profile/', {
+          method: 'PUT',
+          body: JSON.stringify({
+            bio: document.getElementById('bio').value,
+            years_experience: Number(document.getElementById('years_experience').value),
+            location_id: location ? location.location_id : null,
+            skills: document.getElementById('skills').value.split(',').map((s) => s.trim()).filter(Boolean),
+            certifications: document.getElementById('certifications').value.split(',').map((s) => s.trim()).filter(Boolean),
+            is_available: document.getElementById('is_available').checked,
+          }),
+        });
+        toast('Profile updated.', 'success');
+      } catch (err) {
+        showError('profile-error', formatApiError(err));
+      }
+    });
+
+    document.getElementById('upload-doc-btn').addEventListener('click', uploadDocumentModal);
+    loadDocuments();
+  }
+
+  async function loadDocuments() {
+    const documents = await apiFetch('/caregivers/documents/');
+    renderInto('documents-list', documents.length ? documents.map((d) => `
+      <div class="list-row">
+        <div class="list-row-main">
+          <div class="list-row-title"><span data-icon="file-text" data-size="15"></span>${d.label || 'Document'}</div>
+          <div class="list-row-sub">Uploaded ${new Date(d.uploaded_at).toLocaleDateString()}</div>
+        </div>
+        <div class="list-row-actions">
+          <a class="btn btn-sm" href="${d.file}" target="_blank" rel="noopener"><span data-icon="download" data-size="14"></span>View</a>
+        </div>
+      </div>
+    `).join('') : emptyState('No documents uploaded', 'Upload your qualifications for admin review.', 'file-text'));
+  }
+
+  function uploadDocumentModal() {
+    openModal(`
+      <div class="modal-header"><h2>Upload document</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body">
+        <div id="upload-error" class="error-banner"></div>
+        <form id="upload-form">
+          <div class="form-group">
+            <label for="doc_label">Document label</label>
+            <input type="text" id="doc_label" placeholder="National ID, Certificate, etc." required />
+          </div>
+          <div class="form-group">
+            <label for="doc_file">File</label>
+            <input type="file" id="doc_file" required />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-action="close">Cancel</button>
+        <button class="btn btn-primary" id="upload-submit-btn">Upload</button>
+      </div>
+    `);
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+    document.getElementById('upload-submit-btn').addEventListener('click', async () => {
+      hideError('upload-error');
+      const fileInput = document.getElementById('doc_file');
+      if (!fileInput.files.length) {
+        showError('upload-error', 'Please choose a file.');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('label', document.getElementById('doc_label').value);
+      formData.append('file', fileInput.files[0]);
+      try {
+        const res = await fetch('/api/caregivers/documents/', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getToken()}` },
+          body: formData,
+        });
+        if (!res.ok) throw await res.json();
+        closeModal();
+        toast('Document uploaded.', 'success');
+        loadDocuments();
+      } catch (err) {
+        showError('upload-error', formatApiError(err));
+      }
+    });
+  }
+
+  renderInto('page-content', loadingState());
+  loadProfile();
+</script>
+</body>
+</html>

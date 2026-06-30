@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Reviews, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/caregiver-reviews.css" />
+</head>
+<body data-page="/caregiver/reviews.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Reviews');
+
+  async function loadReviews() {
+    const user = getUser();
+    const reviews = await apiFetch(`/reviews/caregiver/${user.id}/`);
+    renderTable('reviews-table', {
+      columns: [
+        { header: 'Rating', render: (r) => `${r.rating} / 5` },
+        { header: 'Comment', render: (r) => r.comment || '' },
+        { header: 'Date', render: (r) => new Date(r.created_at).toLocaleDateString() },
+      ],
+      rows: reviews,
+      emptyTitle: 'No reviews yet',
+      emptySub: 'Reviews from families appear here after completed bookings.',
+      emptyIcon: 'star',
+    });
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Reviews</h1></div>
+    <div class="section" id="reviews-table">${loadingState()}</div>
+  `);
+  loadReviews();
+</script>
+</body>
+</html>

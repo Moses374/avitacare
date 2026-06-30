@@ -20,8 +20,15 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'accounts',
+    'locations',
     'caregivers',
     'families',
+    'service_requests',
+    'matching',
+    'bookings',
+    'reviews',
+    'notifications',
+    'admin_portal',
 ]
 
 MIDDLEWARE = [
@@ -40,7 +47,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR.parent / 'frontend' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,6 +88,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR.parent / 'frontend' / 'static']
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
@@ -96,11 +106,9 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-]
+# Frontend is served same-origin via Django templates/static; no cross-origin clients yet.
+CORS_ALLOWED_ORIGINS = []
+
+MEILI_HOST = config('MEILI_HOST', default='http://localhost:7700')
+MEILI_MASTER_KEY = config('MEILI_MASTER_KEY', default='')
+MEILI_LOCATIONS_INDEX = 'locations'

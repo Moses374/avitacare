@@ -3,46 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — Avitacare</title>
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Sign in, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/auth-shell.css" />
+  <link rel="stylesheet" href="/static/css/pages/login.css" />
 </head>
 <body>
-<div class="container" style="max-width:420px; margin-top:4rem;">
-  <div class="card">
-    <h2 class="text-center">Welcome back</h2>
-    <p class="text-muted text-center mt-1">Sign in to your Avitacare account</p>
 
-    <p id="error-msg" class="text-center mt-2" style="color:red; display:none;"></p>
-
-    <form id="login-form" class="mt-2">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" required />
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <a class="auth-brand" href="/"><img src="/static/logo-light.svg" alt="Avitacare" height="30" /></a>
+    <div class="auth-pitch">
+      <h2>Find trusted caregivers with confidence.</h2>
+      <div class="auth-points">
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Verified, background checked caregivers</div>
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Secure bookings and messaging</div>
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Transparent reviews from real families</div>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" required />
-      </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
-    </form>
+    </div>
+    <div class="auth-foot">Avitacare, caregiver coordination made simple.</div>
+  </aside>
 
-    <p class="text-center mt-2 text-muted">
-      Don't have an account? <a href="/register.html">Register</a>
-    </p>
-  </div>
+  <main class="auth-main">
+    <div class="login-wrap">
+      <h1>Sign in</h1>
+      <p class="login-sub">Sign in to your Avitacare account.</p>
+
+      <div id="error-msg" class="error-banner"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required />
+        </div>
+        <button type="submit" class="btn btn-primary login-submit">Sign in</button>
+      </form>
+
+      <p class="login-footer-note">Don't have an account, <a href="/register.html">register here</a>.</p>
+    </div>
+  </main>
 </div>
 
+<script src="/static/js/icons.js"></script>
 <script src="/static/js/app.js"></script>
 <script>
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    hideError('error-msg');
     try {
       await login(
         document.getElementById('email').value,
         document.getElementById('password').value
       );
     } catch (err) {
-      showError('error-msg', 'Invalid email or password.');
+      showError('error-msg', err && err.detail ? err.detail : 'Invalid email or password.');
     }
   });
 </script>

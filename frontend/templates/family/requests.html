@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Service requests, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/components/location-select.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-requests.css" />
+</head>
+<body data-page="/family/requests.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/location-select.js"></script>
+<script>
+  mountAppShell('Service requests');
+
+  // Convert human label → snake_case key ("Elderly care" → "elderly_care")
+  function toSkillKey(label) {
+    return label.trim().toLowerCase().replace(/\s+/g, '_');
+  }
+  // Convert snake_case key → readable label ("elderly_care" → "Elderly care")
+  function fromSkillKey(key) {
+    return key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  }
+
+  // Inline tag input: returns { getTags, destroy } after the element is in DOM
+  function initSkillTagInput(wrapId, inputId) {
+    const wrap  = document.getElementById(wrapId);
+    const input = document.getElementById(inputId);
+    const tags  = [];
+
+    function renderTags() {
+      wrap.querySelectorAll('.tag').forEach(el => el.remove());
+      tags.forEach((tag, i) => {
+        const el = document.createElement('div');
+        el.className = 'tag';
+        el.innerHTML = `<span>${fromSkillKey(tag)}</span><button type="button">&times;</button>`;
+        el.querySelector('button').addEventListener('click', () => { tags.splice(i, 1); renderTags(); });
+        wrap.insertBefore(el, input);
+      });
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const val = toSkillKey(input.value.replace(/,$/, ''));
+        if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+        input.value = '';
+      }
+      if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop(); renderTags();
+      }
+    });
+
+    wrap.addEventListener('click', () => input.focus());
+    return { getTags: () => [...tags] };
+  }
+
+  const CARE_TYPES = [
+    ['elderly', 'Elderly care'], ['child', 'Child care'], ['disability', 'Disability support'],
+    ['post_hospital', 'Post hospital recovery'], ['palliative', 'Palliative care'],
+  ];
+
+  function newRequestModal() {
+    openModal(`
+      <div class="modal-header"><h2>New service request</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body">
+        <div id="request-error" class="error-banner"></div>
+        <form id="new-request-form">
+          <div class="form-group">
+            <label for="care_type">Care type</label>
+            <select id="care_type" required>
+              ${CARE_TYPES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" rows="3" required></textarea>
+          </div>
+          <div class="form-row">
+            ${locationSelectMarkup({ id: 'request-location', label: 'Location', required: true })}
+            <div class="form-group">
+              <label for="urgency_level">Urgency</label>
+              <select id="urgency_level">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Required skills <span style="font-weight:400;color:#6b7177;font-size:.8rem">(press Enter after each)</span></label>
+            <div class="tag-input-wrap" id="skills-wrap">
+              <input type="text" id="skills-input" placeholder="e.g. Elderly care" autocomplete="off" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="schedule_start">Start</label>
+              <input type="datetime-local" id="schedule_start" required />
+            </div>
+            <div class="form-group">
+              <label for="schedule_end">End</label>
+              <input type="datetime-local" id="schedule_end" required />
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-action="close">Cancel</button>
+        <button class="btn btn-primary" id="submit-request-btn">Submit request</button>
+      </div>
+    `);
+    const locationSelect = initLocationSelect('request-location');
+    const skillsTag = initSkillTagInput('skills-wrap', 'skills-input');
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', () => { locationSelect.destroy(); closeModal(); }));
+    document.getElementById('submit-request-btn').addEventListener('click', async () => {
+      hideError('request-error');
+      const skills = skillsTag.getTags();
+      const location = locationSelect.getValue();
+      if (!location) {
+        showError('request-error', 'Please select a location from the suggestions.');
+        return;
+      }
+      try {
+        await apiFetch('/requests/', {
+          method: 'POST',
+          body: JSON.stringify({
+            care_type: document.getElementById('care_type').value,
+            description: document.getElementById('description').value,
+            location_id: location.location_id,
+            urgency_level: document.getElementById('urgency_level').value,
+            required_skills: skills,
+            schedule_start: document.getElementById('schedule_start').value,
+            schedule_end: document.getElementById('schedule_end').value,
+          }),
+        });
+        closeModal();
+        toast('Service request submitted.', 'success');
+        loadRequests();
+      } catch (err) {
+        showError('request-error', formatApiError(err));
+      }
+    });
+  }
+
+  function matchesModal(request) {
+    openModal(`
+      <div class="modal-header"><h2>Matching caregivers</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body" id="matches-body">${loadingState('Finding caregivers...')}</div>
+    `);
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+
+    apiFetch(`/matching/request/${request.id}/`).then((data) => {
+      const matches = data.matches || [];
+      const body = document.getElementById('matches-body');
+      if (!body) return;
+      if (matches.length === 0) {
+        renderInto(body, emptyState('No matching caregivers yet', 'Check back once more caregivers are verified.', 'search'));
+        return;
+      }
+      renderInto(body, matches.map((m) => `
+        <div class="list-row">
+          <div class="list-row-main">
+            <div class="list-row-title">
+              ${m.name}
+              ${m.verified ? '<span class="status status-success"><span data-icon="check-circle" data-size="13"></span>Verified</span>' : ''}
+            </div>
+            <div class="list-row-sub">Match score, ${m.score}</div>
+          </div>
+          <div class="list-row-actions">
+            <button class="btn btn-sm btn-primary" data-book-caregiver="${m.caregiver_id}">Book</button>
+          </div>
+        </div>
+      `).join(''));
+      body.querySelectorAll('[data-book-caregiver]').forEach((btn) => {
+        btn.addEventListener('click', () => bookCaregiverModal(request, btn.getAttribute('data-book-caregiver')));
+      });
+    }).catch(() => {
+      renderInto(document.getElementById('matches-body'), emptyState('Could not load matches', '', 'alert-circle'));
+    });
+  }
+
+  function bookCaregiverModal(request, caregiverId) {
+    openModal(`
+      <div class="modal-header"><h2>Confirm booking</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body">
+        <div id="booking-error" class="error-banner"></div>
+        <form id="booking-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="b_start">Start</label>
+              <input type="datetime-local" id="b_start" required />
+            </div>
+            <div class="form-group">
+              <label for="b_end">End</label>
+              <input type="datetime-local" id="b_end" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="b_notes">Notes</label>
+            <textarea id="b_notes" rows="2"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-action="close">Cancel</button>
+        <button class="btn btn-primary" id="confirm-booking-btn">Confirm booking</button>
+      </div>
+    `);
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+    document.getElementById('confirm-booking-btn').addEventListener('click', async () => {
+      hideError('booking-error');
+      try {
+        await apiFetch('/bookings/', {
+          method: 'POST',
+          body: JSON.stringify({
+            caregiver: Number(caregiverId),
+            service_request: request.id,
+            scheduled_start: document.getElementById('b_start').value,
+            scheduled_end: document.getElementById('b_end').value,
+            notes: document.getElementById('b_notes').value,
+          }),
+        });
+        closeModal();
+        toast('Booking created.', 'success');
+        loadRequests();
+      } catch (err) {
+        showError('booking-error', formatApiError(err));
+      }
+    });
+  }
+
+  async function loadRequests() {
+    const requests = await apiFetch('/requests/');
+    window.__requests = requests;
+    renderTable('requests-table', {
+      columns: [
+        { header: 'Care type', render: (r) => r.care_type.replace(/_/g, ' ') },
+        { header: 'Location', render: (r) => (r.location ? r.location.display_name : 'Not set') },
+        { header: 'Urgency', render: (r) => r.urgency_level },
+        { header: 'Status', render: (r) => statusLabel(r.status) },
+        { header: '', render: (r) => r.status === 'open'
+            ? `<button class="btn btn-sm" data-view-matches="${r.id}">View matches</button>`
+            : '' },
+      ],
+      rows: requests,
+      emptyTitle: 'No service requests yet',
+      emptySub: 'Click "New request" to get started.',
+      emptyIcon: 'clipboard',
+    });
+    document.querySelectorAll('[data-view-matches]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = Number(btn.getAttribute('data-view-matches'));
+        matchesModal(window.__requests.find((r) => r.id === id));
+      });
+    });
+  }
+
+  function isProfileComplete(profile) {
+    return !!(profile.location && profile.care_recipient_name && profile.care_recipient_details);
+  }
+
+  async function init() {
+    renderInto('page-content', `
+      <div class="section-header">
+        <h1>Service requests</h1>
+        <div class="requests-header-actions">
+          <a class="btn" href="/family/caregivers.html"><span data-icon="search" data-size="15"></span>Browse caregivers</a>
+          <button class="btn btn-primary" id="new-request-btn"><span data-icon="plus" data-size="15"></span>New request</button>
+        </div>
+      </div>
+      <div id="profile-incomplete-banner" style="display:none;align-items:center;gap:.75rem;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;border-radius:8px;padding:.8rem 1rem;font-size:.875rem;margin-bottom:1rem">
+        <span data-icon="alert-triangle" data-size="16" style="flex-shrink:0"></span>
+        <span>Your profile is incomplete. Please <a href="/family/profile.html" style="color:#92400e;font-weight:600;text-decoration:underline">complete your profile</a> (location, care recipient name and details) before submitting a request.</span>
+      </div>
+      <div class="section" id="requests-table">${loadingState()}</div>
+    `);
+
+    const [profile] = await Promise.all([
+      apiFetch('/families/profile/'),
+      loadRequests(),
+    ]);
+
+    const btn = document.getElementById('new-request-btn');
+    if (isProfileComplete(profile)) {
+      btn.addEventListener('click', newRequestModal);
+    } else {
+      btn.disabled = true;
+      btn.title = 'Complete your profile before submitting a request';
+      document.getElementById('profile-incomplete-banner').style.display = 'flex';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

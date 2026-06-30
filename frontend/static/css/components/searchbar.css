@@ -1,0 +1,15 @@
+/* Component, search bar. */
+
+.search-bar {
+  position: relative;
+}
+.search-bar input {
+  padding-left: 2.1rem;
+}
+.search-bar .icon {
+  position: absolute;
+  left: .65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa0a6;
+}

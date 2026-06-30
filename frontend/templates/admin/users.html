@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Users, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/searchbar.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/admin-users.css" />
+</head>
+<body data-page="/admin/users">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Users');
+  function fromKey(key) {
+    return (key || '').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  }
+
+  const ROLE_ICON = { family: 'home', caregiver: 'heart', admin: 'shield' };
+  function roleBadge(role) {
+    const icon = ROLE_ICON[role] || 'user';
+    return '<span class="status status-muted"><span data-icon="' + icon + '" data-size="13"></span>' + fromKey(role) + '</span>';
+  }
+
+
+  function statusBadge(isActive) {
+    return isActive
+      ? '<span class="status status-success"><span data-icon="check-circle" data-size="14"></span>Active</span>'
+      : '<span class="status status-danger"><span data-icon="x-circle" data-size="14"></span>Deactivated</span>';
+  }
+
+  function confirmToggle(user) {
+    const action = user.is_active ? 'deactivate' : 'reactivate';
+    confirmDialog({
+      title: user.is_active ? 'Deactivate account' : 'Reactivate account',
+      message: user.is_active
+        ? `${user.full_name || user.email} will lose access to the platform immediately.`
+        : `${user.full_name || user.email} will regain access to the platform.`,
+      confirmLabel: user.is_active ? 'Deactivate' : 'Reactivate',
+      danger: user.is_active,
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/admin-portal/${action}-account/${user.id}/`, { method: 'POST' });
+          toast(`Account ${action}d.`, 'success');
+          loadUsers();
+        } catch (err) {
+          toast(formatApiError(err), 'error');
+        }
+      },
+    });
+  }
+
+  async function loadUsers() {
+    const role = document.getElementById('filter-role').value;
+    const search = document.getElementById('filter-search').value.trim();
+    const params = new URLSearchParams();
+    if (role) params.set('role', role);
+    if (search) params.set('search', search);
+
+    renderInto('users-table', loadingState());
+    const users = await apiFetch(`/admin-portal/users/?${params.toString()}`);
+    renderTable('users-table', {
+      columns: [
+        { header: 'Name', render: (u) => u.full_name || 'N/A' },
+        { header: 'Email', render: (u) => u.email },
+        { header: 'Role', render: (u) => roleBadge(u.role) },
+        { header: 'Joined', render: (u) => new Date(u.date_joined).toLocaleDateString() },
+        { header: 'Status', render: (u) => statusBadge(u.is_active) },
+        { header: '', render: (u) => u.role === 'admin' ? '' : `
+            <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-primary'}" data-toggle="${u.id}">
+              ${u.is_active ? 'Deactivate' : 'Reactivate'}
+            </button>
+          ` },
+      ],
+      rows: users,
+      emptyTitle: 'No users found',
+      emptySub: 'Try a different role or search term.',
+      emptyIcon: 'users',
+    });
+    document.querySelectorAll('[data-toggle]').forEach((btn) => {
+      const id = Number(btn.getAttribute('data-toggle'));
+      btn.addEventListener('click', () => confirmToggle(users.find((u) => u.id === id)));
+    });
+  }
+
+  function init() {
+    renderInto('page-content', `
+      <div class="section-header"><h1>Users</h1></div>
+      <div class="section">
+        <div class="section-body padded">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="filter-role">Role</label>
+              <select id="filter-role">
+                <option value="">All roles</option>
+                <option value="family">Family</option>
+                <option value="caregiver">Caregiver</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-search">Search by email</label>
+              <div class="search-bar">
+                <span class="icon" data-icon="search" data-size="16"></span>
+                <input type="text" id="filter-search" placeholder="name@example.com" />
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="filter-btn">Search</button>
+        </div>
+      </div>
+      <div class="section" id="users-table">${loadingState()}</div>
+    `);
+    document.getElementById('filter-btn').addEventListener('click', loadUsers);
+    document.getElementById('filter-role').addEventListener('change', loadUsers);
+    loadUsers();
+  }
+
+  init();
+</script>
+</body>
+</html>

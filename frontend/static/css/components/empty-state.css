@@ -1,0 +1,23 @@
+/* Component, empty state. */
+
+.empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #6b7177;
+}
+.empty-block .icon {
+  color: #9aa0a6;
+  margin-bottom: .75rem;
+}
+.empty-block .empty-title {
+  font-weight: 500;
+  color: #1a1d21;
+  margin-bottom: .25rem;
+}
+.empty-block .empty-sub {
+  font-size: .8125rem;
+}

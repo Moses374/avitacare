@@ -1,0 +1,17 @@
+/* Component, pagination. */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  border-top: 1px solid #e3e5e8;
+}
+.pagination .page-info {
+  font-size: .8125rem;
+  color: #6b7177;
+}
+.pagination .page-controls {
+  display: flex;
+  gap: .35rem;
+}

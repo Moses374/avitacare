@@ -1,0 +1,19 @@
+/* Component, status indicator. Icon plus text, never a colored badge shape. */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .8125rem;
+  font-weight: 500;
+}
+.status .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.status-success { color: #1a7f4e; }
+.status-warning { color: #92580a; }
+.status-danger  { color: #b3261e; }
+.status-info    { color: #1d5fae; }
+.status-muted   { color: #6b7177; }

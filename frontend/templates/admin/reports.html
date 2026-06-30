@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Reports, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/pages/reports.css" />
+</head>
+<body data-page="/admin/reports">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Reports');
+
+  function reportRows(obj) {
+    return Object.entries(obj).map(([key, value]) => `
+      <div class="list-row">
+        <div class="list-row-main"><div class="list-row-title">${key.replace(/_/g, ' ')}</div></div>
+        <div class="list-row-actions"><strong>${value}</strong></div>
+      </div>
+    `).join('');
+  }
+
+  async function loadReport() {
+    const report = await apiFetch('/admin-portal/reports/');
+    renderInto('page-content', `
+      <div class="section-header"><h1>Reports</h1></div>
+
+      <div class="section">
+        <div class="section-title"><span data-icon="users" data-size="15"></span>Users</div>
+        <div class="section-body">${reportRows(report.users)}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><span data-icon="shield" data-size="15"></span>Caregivers</div>
+        <div class="section-body">${reportRows(report.caregivers)}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><span data-icon="clipboard" data-size="15"></span>Service requests</div>
+        <div class="section-body">${reportRows(report.service_requests)}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><span data-icon="calendar" data-size="15"></span>Bookings</div>
+        <div class="section-body">${reportRows(report.bookings)}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><span data-icon="star" data-size="15"></span>Reviews</div>
+        <div class="section-body">${reportRows({
+          total: report.reviews.total,
+          average_rating: parseFloat(report.reviews.average_rating || 0).toFixed(2),
+        })}</div>
+      </div>
+    `);
+  }
+
+  renderInto('page-content', loadingState());
+  loadReport();
+</script>
+</body>
+</html>

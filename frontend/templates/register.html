@@ -3,72 +3,346 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register — Avitacare</title>
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Register, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/auth-shell.css" />
+  <link rel="stylesheet" href="/static/css/pages/register.css" />
 </head>
 <body>
-<div class="container" style="max-width:480px; margin-top:3rem;">
-  <div class="card">
-    <h2 class="text-center">Create an account</h2>
 
-    <p id="error-msg" class="text-center mt-2" style="color:red; display:none;"></p>
+<div class="auth-shell">
+  <aside class="auth-aside">
+    <a class="auth-brand" href="/"><img src="/static/logo-light.svg" alt="Avitacare" height="30" /></a>
+    <div class="auth-pitch">
+      <h2>Join a platform built on trust and transparency.</h2>
+      <div class="auth-points">
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Quick setup for families and caregivers</div>
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Admin verified caregiver profiles</div>
+        <div class="auth-point"><span data-icon="check-circle" data-size="16"></span>Ratings and reviews after every booking</div>
+      </div>
+    </div>
+    <div class="auth-foot">Avitacare, caregiver coordination made simple.</div>
+  </aside>
 
-    <form id="register-form" class="mt-2">
-      <div class="grid-2">
-        <div class="form-group">
-          <label>First Name</label>
-          <input type="text" id="first_name" required />
+  <main class="auth-main">
+    <div class="register-wrap">
+
+      <!-- Step indicator: only visible during caregiver flow -->
+      <div id="step-indicator" class="reg-steps" style="display:none">
+        <div class="reg-step active" id="step-dot-1">
+          <div class="reg-step-num">1</div>
+          <span>Account</span>
         </div>
-        <div class="form-group">
-          <label>Last Name</label>
-          <input type="text" id="last_name" required />
+        <div class="reg-step-line"></div>
+        <div class="reg-step" id="step-dot-2">
+          <div class="reg-step-num">2</div>
+          <span>Profile</span>
         </div>
       </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="email" required />
-      </div>
-      <div class="form-group">
-        <label>Phone</label>
-        <input type="tel" id="phone" placeholder="+254..." />
-      </div>
-      <div class="form-group">
-        <label>I am a…</label>
-        <select id="role" required>
-          <option value="">Select role</option>
-          <option value="caregiver">Caregiver</option>
-          <option value="family">Family</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="password" required />
-      </div>
-      <button type="submit" class="btn btn-primary" style="width:100%">Register</button>
-    </form>
 
-    <p class="text-center mt-2 text-muted">
-      Already have an account? <a href="/login.html">Sign in</a>
-    </p>
-  </div>
+      <div id="error-msg" class="error-banner"></div>
+
+      <!-- ── Step 1: basic account info ── -->
+      <div id="step-1">
+        <h1>Create an account</h1>
+        <p class="register-sub">Join Avitacare as a family or a caregiver.</p>
+
+        <form id="register-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="first_name">First name</label>
+              <input type="text" id="first_name" required />
+            </div>
+            <div class="form-group">
+              <label for="last_name">Last name</label>
+              <input type="text" id="last_name" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" required />
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" placeholder="+254..." />
+          </div>
+          <div class="form-group">
+            <label for="role">I am a</label>
+            <select id="role" required>
+              <option value="">Select role</option>
+              <option value="caregiver">Caregiver</option>
+              <option value="family">Family</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" required />
+            </div>
+            <div class="form-group">
+              <label for="password_confirm">Confirm password</label>
+              <input type="password" id="password_confirm" required />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary register-submit">Continue</button>
+        </form>
+
+        <p class="register-footer-note">Already have an account, <a href="/login.html">sign in</a>.</p>
+      </div>
+
+      <!-- ── Step 2: caregiver professional details ── -->
+      <div id="step-2" style="display:none">
+        <h1>Your caregiver profile</h1>
+        <p class="register-sub">Tell us about your experience. This goes to our admin team for verification.</p>
+
+        <form id="profile-form">
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" rows="3" placeholder="Briefly describe your caregiving background and approach…"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="years_experience">Years of experience</label>
+            <input type="number" id="years_experience" min="0" max="60" placeholder="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Skills <span class="optional">(press Enter or comma to add)</span></label>
+            <div class="tag-input-wrap" id="skills-wrap">
+              <input type="text" id="skills-input" placeholder="e.g. Elderly care" autocomplete="off" />
+            </div>
+            <div class="tag-hint">Add each skill and press Enter.</div>
+          </div>
+
+          <div class="form-group">
+            <label>Certifications <span class="optional">(press Enter or comma to add)</span></label>
+            <div class="tag-input-wrap" id="certs-wrap">
+              <input type="text" id="certs-input" placeholder="e.g. First Aid" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Supporting documents <span class="optional">(optional)</span></label>
+            <div class="file-drop-area" id="drop-area">
+              <input type="file" id="doc-input" multiple accept=".pdf,.jpg,.jpeg,.png" />
+              <div class="file-drop-label">
+                <span data-icon="upload" data-size="18"></span><br />
+                <strong>Click to upload</strong> or drag files here<br />
+                <small>PDF, JPG, PNG: ID, certificates, reference letters</small>
+              </div>
+            </div>
+            <div class="file-list" id="file-list"></div>
+          </div>
+
+          <div class="reg-nav">
+            <button type="button" class="btn btn-secondary" id="back-btn">Back</button>
+            <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── Pending confirmation ── -->
+      <div id="step-pending" style="display:none">
+        <div class="reg-pending">
+          <div class="reg-pending-icon"><span data-icon="shield" data-size="28"></span></div>
+          <h2>Application submitted</h2>
+          <p>
+            Thank you! Your caregiver profile has been sent to the Avitacare admin team for review.
+            You will receive a notification once your account is approved and you can log in.
+          </p>
+          <a href="/login.html" class="btn btn-primary">Back to sign in</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
 </div>
 
+<script src="/static/js/icons.js"></script>
 <script src="/static/js/app.js"></script>
 <script>
+  // ── Tag input helper ──
+  function makeTagInput(wrapId, inputId) {
+    const wrap  = document.getElementById(wrapId);
+    const input = document.getElementById(inputId);
+    const tags  = [];
+
+    function renderTags() {
+      wrap.querySelectorAll('.tag').forEach(el => el.remove());
+      tags.forEach((tag, i) => {
+        const el = document.createElement('div');
+        el.className = 'tag';
+        el.innerHTML = `<span>${tag}</span><button type="button" aria-label="Remove">&times;</button>`;
+        el.querySelector('button').addEventListener('click', () => { tags.splice(i, 1); renderTags(); });
+        wrap.insertBefore(el, input);
+      });
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const val = input.value.trim().replace(/,$/, '');
+        if (val && !tags.includes(val)) { tags.push(val); renderTags(); }
+        input.value = '';
+      }
+      if (e.key === 'Backspace' && !input.value && tags.length) {
+        tags.pop(); renderTags();
+      }
+    });
+
+    wrap.addEventListener('click', () => input.focus());
+    return { getTags: () => [...tags] };
+  }
+
+  const skillsInput = makeTagInput('skills-wrap', 'skills-input');
+  const certsInput  = makeTagInput('certs-wrap',  'certs-input');
+
+  // ── File list ──
+  const selectedFiles = [];
+
+  function renderFiles() {
+    const list = document.getElementById('file-list');
+    list.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `<span data-icon="file" data-size="14"></span><span>${f.name}</span><button type="button">&times;</button>`;
+      item.querySelector('button').addEventListener('click', () => { selectedFiles.splice(i, 1); renderFiles(); if (typeof mountIcons === 'function') mountIcons(); });
+      list.appendChild(item);
+    });
+    if (typeof mountIcons === 'function') mountIcons();
+  }
+
+  document.getElementById('doc-input').addEventListener('change', (e) => {
+    Array.from(e.target.files).forEach(f => {
+      if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+    });
+    e.target.value = '';
+    renderFiles();
+  });
+
+  const dropArea = document.getElementById('drop-area');
+  dropArea.addEventListener('dragover',  (e) => { e.preventDefault(); dropArea.classList.add('drag-over'); });
+  dropArea.addEventListener('dragleave', ()  => dropArea.classList.remove('drag-over'));
+  dropArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropArea.classList.remove('drag-over');
+    Array.from(e.dataTransfer.files).forEach(f => {
+      if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+    });
+    renderFiles();
+  });
+
+  // ── Step navigation ──
+  let step1Data = null;
+
+  function showStep(n) {
+    document.getElementById('step-1').style.display       = n === 1        ? '' : 'none';
+    document.getElementById('step-2').style.display       = n === 2        ? '' : 'none';
+    document.getElementById('step-pending').style.display = n === 'pending' ? '' : 'none';
+
+    const indicator = document.getElementById('step-indicator');
+    const dot1 = document.getElementById('step-dot-1');
+    const dot2 = document.getElementById('step-dot-2');
+
+    if (n === 1 || n === 2) {
+      indicator.style.display = 'flex';
+      dot1.className = 'reg-step ' + (n === 1 ? 'active' : 'done');
+      dot2.className = 'reg-step ' + (n === 2 ? 'active' : '');
+    } else {
+      indicator.style.display = 'none';
+    }
+
+    hideError('error-msg');
+  }
+
+  // ── Step 1 submit ──
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    hideError('error-msg');
+
+    const role = document.getElementById('role').value;
+
+    step1Data = {
+      first_name:       document.getElementById('first_name').value,
+      last_name:        document.getElementById('last_name').value,
+      email:            document.getElementById('email').value,
+      phone_number:     document.getElementById('phone').value,
+      role,
+      password:         document.getElementById('password').value,
+      password_confirm: document.getElementById('password_confirm').value,
+    };
+
+    if (role === 'caregiver') {
+      // Show step indicator and go to step 2
+      showStep(2);
+    } else {
+      // Families go straight through
+      try {
+        await register(step1Data);
+      } catch (err) {
+        showError('error-msg', formatApiError(err));
+      }
+    }
+  });
+
+  document.getElementById('back-btn').addEventListener('click', () => showStep(1));
+
+  // ── Step 2 submit ──
+  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError('error-msg');
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
     try {
-      await register({
-        first_name: document.getElementById('first_name').value,
-        last_name:  document.getElementById('last_name').value,
-        email:      document.getElementById('email').value,
-        phone:      document.getElementById('phone').value,
-        role:       document.getElementById('role').value,
-        password:   document.getElementById('password').value,
+      // 1. Create the user account (returns tokens)
+      const authData = await apiFetch('/auth/register/', {
+        method: 'POST',
+        body: JSON.stringify(step1Data),
       });
+
+      // Temporarily store access token so profile calls below can authenticate
+      localStorage.setItem('access_token', authData.access);
+
+      // 2. Push professional profile details to the caregiver profile
+      await apiFetch('/caregivers/profile/', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          bio:              document.getElementById('bio').value.trim(),
+          years_experience: parseInt(document.getElementById('years_experience').value, 10) || 0,
+          skills:           skillsInput.getTags(),
+          certifications:   certsInput.getTags(),
+        }),
+      });
+
+      // 3. Upload any supporting documents
+      for (const file of selectedFiles) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('label', file.name);
+        await fetch(`${API_BASE}/caregivers/documents/`, {
+          method:  'POST',
+          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          body:    fd,
+        });
+      }
+
+      // 4. Clear tokens: caregiver must wait for admin approval before logging in
+      clearAuth();
+      showStep('pending');
+
     } catch (err) {
-      const msg = JSON.stringify(err);
-      showError('error-msg', msg);
+      clearAuth();
+      showError('error-msg', formatApiError(err));
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit application';
     }
   });
 </script>

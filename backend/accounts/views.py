@@ -20,10 +20,8 @@ class RegisterView(generics.CreateAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             'user': UserSerializer(user).data,
-            'tokens': {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-            }
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
         }, status=status.HTTP_201_CREATED)
 
 
@@ -36,6 +34,30 @@ class LoginView(TokenObtainPairView):
             from django.contrib.auth import get_user_model
             User = get_user_model()
             user = User.objects.get(email=request.data.get('email'))
+
+            if user.role == 'caregiver':
+                from caregivers.models import CaregiverProfile
+                try:
+                    verification_status = CaregiverProfile.objects.get(pk=user.pk).verification_status
+                except CaregiverProfile.DoesNotExist:
+                    verification_status = CaregiverProfile.VerificationStatus.PENDING
+
+                if verification_status != CaregiverProfile.VerificationStatus.VERIFIED:
+                    # Tokens were already issued by super().post(); blacklist the refresh
+                    # token immediately so a blocked caregiver can't still use it.
+                    try:
+                        RefreshToken(response.data['refresh']).blacklist()
+                    except TokenError:
+                        pass
+                    if verification_status == CaregiverProfile.VerificationStatus.REJECTED:
+                        detail = 'Your caregiver application was rejected. Contact support for more information.'
+                    else:
+                        detail = 'Your account is pending admin verification. You will be able to log in once approved.'
+                    return Response(
+                        {'detail': detail, 'verification_status': verification_status},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
             response.data['user'] = UserSerializer(user).data
         return response
 

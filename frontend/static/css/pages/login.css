@@ -1,0 +1,24 @@
+/* Page, login. */
+
+.login-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+.login-wrap h1 {
+  font-size: 1.375rem;
+  margin-bottom: .35rem;
+}
+.login-wrap .login-sub {
+  color: #6b7177;
+  margin-bottom: 2rem;
+}
+.login-wrap .login-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: .5rem;
+}
+.login-wrap .login-footer-note {
+  margin-top: 1.5rem;
+  color: #6b7177;
+  font-size: .8125rem;
+}

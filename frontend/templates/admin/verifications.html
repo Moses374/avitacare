@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Verifications, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/admin-verifications.css" />
+</head>
+<body data-page="/admin/verifications">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Verifications');
+
+  function fromKey(key) {
+    return (key || '').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  }
+
+  let pendingCache = [];
+
+  async function decide(id, action) {
+    try {
+      await apiFetch(`/admin-portal/verify-caregiver/${id}/`, { method: 'POST', body: JSON.stringify({ action }) });
+      toast(action === 'approve' ? 'Caregiver approved.' : 'Caregiver rejected.', 'success');
+      closeModal();
+      loadPending();
+    } catch (err) {
+      toast(formatApiError(err), 'error');
+    }
+  }
+
+  function confirmReject(id) {
+    confirmDialog({
+      title: 'Reject caregiver',
+      message: 'This caregiver profile will be marked as rejected and hidden from families.',
+      confirmLabel: 'Reject',
+      danger: true,
+      onConfirm: () => decide(id, 'reject'),
+    });
+  }
+
+  function reviewModal(profile) {
+    const documents = profile.documents || [];
+    openModal(`
+      <div class="modal-header"><h2>${profile.full_name}</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label>Bio</label><p class="text-muted">${profile.bio || 'No bio provided.'}</p></div>
+        <div class="form-row">
+          <div class="form-group"><label>Location</label><p>${profile.location ? profile.location.display_name : 'Not set'}</p></div>
+          <div class="form-group"><label>Experience</label><p>${profile.years_experience} yrs</p></div>
+        </div>
+        <div class="form-group"><label>Skills</label><p>${(profile.skills || []).map(fromKey).join(', ') || 'None listed'}</p></div>
+        <div class="form-group"><label>Certifications</label><p>${(profile.certifications || []).join(', ') || 'None listed'}</p></div>
+        <div class="form-group">
+          <label>Documents</label>
+          ${documents.length === 0 ? '<p class="text-muted">No documents uploaded.</p>' : documents.map((d) => `
+            <div class="list-row">
+              <div class="list-row-main"><div class="list-row-title"><span data-icon="file-text" data-size="15"></span>${d.label || 'Document'}</div></div>
+              <div class="list-row-actions"><a class="btn btn-sm" href="${d.file}" target="_blank" rel="noopener"><span data-icon="download" data-size="14"></span>View</a></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" data-action="reject">Reject</button>
+        <button class="btn btn-primary" data-action="approve">Approve</button>
+      </div>
+    `);
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+    document.querySelector('[data-action="approve"]').addEventListener('click', () => decide(profile.id, 'approve'));
+    document.querySelector('[data-action="reject"]').addEventListener('click', () => confirmReject(profile.id));
+  }
+
+  async function loadPending() {
+    const pending = await apiFetch('/admin-portal/pending-verifications/');
+    pendingCache = pending;
+    renderTable('verifications-table', {
+      columns: [
+        { header: 'Name', render: (c) => c.full_name },
+        { header: 'Location', render: (c) => (c.location ? c.location.display_name : '') },
+        { header: 'Experience', render: (c) => `${c.years_experience} yrs` },
+        { header: 'Skills', render: (c) => (c.skills || []).map(fromKey).join(', ') || 'None listed' },
+        { header: 'Documents', render: (c) => `${(c.documents || []).length} uploaded` },
+        { header: '', render: (c) => `
+            <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:nowrap">
+              <button class="btn btn-sm" data-review="${c.id}">Review</button>
+              <button class="btn btn-sm btn-primary" data-approve="${c.id}">Approve</button>
+              <button class="btn btn-sm btn-danger" data-reject="${c.id}">Reject</button>
+            </div>
+          ` },
+      ],
+      rows: pending,
+      emptyTitle: 'No pending verifications',
+      emptySub: 'New caregiver profiles will appear here for review.',
+      emptyIcon: 'shield',
+    });
+    document.querySelectorAll('[data-review]').forEach((btn) => {
+      const id = Number(btn.getAttribute('data-review'));
+      btn.addEventListener('click', () => reviewModal(pendingCache.find((c) => c.id === id)));
+    });
+    document.querySelectorAll('[data-approve]').forEach((btn) => btn.addEventListener('click', () => decide(btn.getAttribute('data-approve'), 'approve')));
+    document.querySelectorAll('[data-reject]').forEach((btn) => btn.addEventListener('click', () => confirmReject(btn.getAttribute('data-reject'))));
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Verifications</h1></div>
+    <div class="section" id="verifications-table">${loadingState()}</div>
+  `);
+  loadPending();
+</script>
+</body>
+</html>

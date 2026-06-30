@@ -58,3 +58,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_admin_user(self):
         return self.role == 'admin'
+
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'.strip()
+
+
+def get_or_create_subclass(model, user, **defaults):
+    """Promote an existing User row to a multi-table-inheritance subclass (e.g. CaregiverProfile).
+
+    `model.objects.get_or_create(pk=user.pk)` looks like the obvious way to do
+    this but is unsafe: Django's MTI save() also issues an UPDATE against the
+    parent `users` table using whatever parent-field values happen to be on
+    the freshly constructed (mostly-default) child instance, silently
+    blanking the real user's email/password/etc. Seeding the new instance
+    from the already-loaded user's own field values makes that UPDATE a
+    no-op instead.
+    """
+    try:
+        return model.objects.get(pk=user.pk), False
+    except model.DoesNotExist:
+        parent_values = {f.attname: getattr(user, f.attname) for f in user._meta.local_fields}
+        instance = model(**parent_values, **defaults)
+        instance.save()
+        return instance, True

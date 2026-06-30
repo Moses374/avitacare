@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Notifications, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/admin-notifications.css" />
+</head>
+<body data-page="/admin/notifications">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Notifications');
+
+  const CATEGORY_ICON = { booking: 'calendar', verification: 'shield', review: 'star', general: 'bell' };
+
+  async function loadNotifications() {
+    const notifications = await apiFetch('/notifications/');
+    const list = document.getElementById('notifications-list');
+    const markAllBtn = document.getElementById('mark-all-read-btn');
+    const hasUnread = notifications.some((n) => !n.is_read);
+    if (markAllBtn) markAllBtn.disabled = !hasUnread;
+
+    if (!notifications.length) {
+      renderInto(list, emptyState('No notifications', 'You are all caught up.', 'bell'));
+      return;
+    }
+    renderInto(list, notifications.map((n) => `
+      <div class="list-row ${n.is_read ? '' : 'is-unread'}">
+        <div class="list-row-main">
+          <div class="list-row-title">
+            <span data-icon="${CATEGORY_ICON[n.category] || 'bell'}" data-size="15"></span>
+            ${n.message}
+          </div>
+          <div class="list-row-sub">${new Date(n.created_at).toLocaleString()}</div>
+        </div>
+        <div class="list-row-actions">
+          ${n.is_read ? '<span class="status status-muted">Read</span>' : `<button class="btn btn-sm" data-mark-read="${n.id}">Mark read</button>`}
+        </div>
+      </div>
+    `).join(''));
+    list.querySelectorAll('[data-mark-read]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        await apiFetch(`/notifications/${btn.getAttribute('data-mark-read')}/read/`, { method: 'PATCH' });
+        await loadNotifications();
+        refreshUnreadBadge();
+      });
+    });
+  }
+
+  async function markAllRead() {
+    const notifications = await apiFetch('/notifications/');
+    const unread = notifications.filter((n) => !n.is_read);
+    await Promise.all(unread.map((n) => apiFetch(`/notifications/${n.id}/read/`, { method: 'PATCH' })));
+    await loadNotifications();
+    refreshUnreadBadge();
+  }
+
+  renderInto('page-content', `
+    <div class="section-header">
+      <h1>Notifications</h1>
+      <button class="btn btn-sm" id="mark-all-read-btn">Mark all as read</button>
+    </div>
+    <div class="section" id="notifications-list">${loadingState()}</div>
+  `);
+  document.getElementById('mark-all-read-btn').addEventListener('click', markAllRead);
+  loadNotifications();
+</script>
+</body>
+</html>

@@ -3,64 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Caregiver Dashboard — Avitacare</title>
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Dashboard, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/banner.css" />
+  <link rel="stylesheet" href="/static/css/components/stats.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/caregiver-dashboard.css" />
 </head>
-<body>
-<!-- TODO: include nav from base.html or refactor to a component -->
+<body data-page="/caregiver/dashboard.html">
 
-<div class="container mt-2">
-  <h1>Welcome, <span id="user-name"></span></h1>
-  <p class="text-muted">Manage your bookings and profile from here.</p>
-
-  <div class="grid-3 mt-3">
-    <div class="card text-center">
-      <h3 id="stat-bookings">—</h3>
-      <p class="text-muted">Active Bookings</p>
-    </div>
-    <div class="card text-center">
-      <h3 id="stat-rating">—</h3>
-      <p class="text-muted">Average Rating</p>
-    </div>
-    <div class="card text-center">
-      <h3 id="stat-reviews">—</h3>
-      <p class="text-muted">Total Reviews</p>
-    </div>
-  </div>
-
-  <div class="card mt-3">
-    <h2>My Bookings</h2>
-    <div id="bookings-list" class="mt-2">Loading…</div>
-  </div>
-</div>
-
+<script src="/static/js/icons.js"></script>
 <script src="/static/js/app.js"></script>
 <script>
-  requireAuth();
-  const user = getUser();
-  document.getElementById('user-name').textContent = user?.first_name || '';
+  mountAppShell('Dashboard');
 
   async function loadDashboard() {
-    const [bookings, profile] = await Promise.all([
+    const content = document.getElementById('page-content');
+    renderInto(content, loadingState());
+
+    const [bookings, profile, notifications] = await Promise.all([
       apiFetch('/bookings/'),
-      apiFetch('/caregivers/my-profile/'),
+      apiFetch('/caregivers/profile/'),
+      apiFetch('/notifications/'),
     ]);
 
-    document.getElementById('stat-bookings').textContent =
-      bookings.filter(b => b.status === 'ongoing' || b.status === 'confirmed').length;
-    document.getElementById('stat-rating').textContent =
-      parseFloat(profile.avg_rating).toFixed(1);
-    document.getElementById('stat-reviews').textContent = profile.total_reviews;
+    const activeBookings = bookings.filter((b) => b.status === 'ongoing' || b.status === 'confirmed').length;
+    const unread = notifications.filter((n) => !n.is_read).length;
 
-    const list = document.getElementById('bookings-list');
-    list.innerHTML = bookings.length
-      ? bookings.map(b => `
-          <div class="card mt-1">
-            <strong>${b.family_name}</strong>
-            <span class="badge badge-${b.status === 'completed' ? 'verified' : 'pending'}" style="float:right">${b.status}</span>
-            <p class="text-muted">${b.scheduled_start} → ${b.scheduled_end}</p>
-          </div>`).join('')
-      : '<p class="text-muted">No bookings yet.</p>';
+    const userName = (getUser() || {}).first_name || 'there';
+    renderInto(content, `
+      <div class="banner">
+        <div>
+          <div class="banner-title">Welcome back, ${userName}</div>
+          <div class="banner-sub">Keep your availability current to stay matched with new requests.</div>
+        </div>
+        <div class="banner-actions">
+          <a href="/caregiver/profile.html" class="btn btn-primary"><span data-icon="user" data-size="15"></span>Edit profile</a>
+        </div>
+      </div>
+
+      <div class="status status-${profile.verification_status === 'verified' ? 'success' : profile.verification_status === 'rejected' ? 'danger' : 'warning'} dashboard-status">
+        <span data-icon="shield" data-size="15"></span>
+        Verification status, ${profile.verification_status}
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label"><span data-icon="calendar" data-size="14"></span>Active bookings</div>
+          <div class="stat-value">${activeBookings}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="star" data-size="14"></span>Average rating</div>
+          <div class="stat-value">${parseFloat(profile.avg_rating || 0).toFixed(1)}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="message-square" data-size="14"></span>Total reviews</div>
+          <div class="stat-value">${profile.total_reviews}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="bell" data-size="14"></span>Notifications</div>
+          <div class="stat-value">${unread}</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Recent bookings</h2>
+        <a href="/caregiver/bookings.html" class="btn btn-sm">View all</a>
+      </div>
+      <div class="section" id="bookings-section"></div>
+    `);
+
+    renderTable('bookings-section', {
+      columns: [
+        { header: 'Family', render: (b) => b.family_name },
+        { header: 'Start', render: (b) => new Date(b.scheduled_start).toLocaleString() },
+        { header: 'Status', render: (b) => statusLabel(b.status) },
+      ],
+      rows: bookings.slice(0, 5),
+      emptyTitle: 'No bookings yet',
+      emptySub: 'Bookings will appear here once a family confirms a request.',
+      emptyIcon: 'calendar',
+    });
   }
 
   loadDashboard();

@@ -1,0 +1,18 @@
+/* Page, caregiver profile. */
+
+.profile-status {
+  margin-bottom: 1rem;
+}
+
+.profile-form {
+  max-width: 520px;
+}
+
+.availability-label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.availability-label input[type="checkbox"] {
+  width: auto;
+}

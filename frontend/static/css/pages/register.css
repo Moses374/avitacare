@@ -1,0 +1,220 @@
+/* Page, register. */
+
+.register-wrap {
+  width: 100%;
+  max-width: 460px;
+}
+.register-wrap h1 {
+  font-size: 1.375rem;
+  margin-bottom: .35rem;
+}
+.register-wrap .register-sub {
+  color: #6b7177;
+  margin-bottom: 2rem;
+}
+.register-wrap .register-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: .5rem;
+}
+.register-wrap .register-footer-note {
+  margin-top: 1.5rem;
+  color: #6b7177;
+  font-size: .8125rem;
+}
+
+/* Step indicator */
+.reg-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1.75rem;
+}
+.reg-step {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .8rem;
+  font-weight: 500;
+  color: #9aa0a6;
+}
+.reg-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #d8dbdf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: border-color .2s, background .2s, color .2s;
+}
+.reg-step.active .reg-step-num {
+  border-color: #0b6e6e;
+  background: #0b6e6e;
+  color: #fff;
+}
+.reg-step.done .reg-step-num {
+  border-color: #0b6e6e;
+  background: #e6f4f4;
+  color: #0b6e6e;
+}
+.reg-step.active { color: #1a1d21; }
+.reg-step-line {
+  flex: 1;
+  height: 2px;
+  background: #e3e5e8;
+  margin: 0 .6rem;
+  min-width: 28px;
+}
+
+/* Skills tag input */
+.tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: .5rem .65rem;
+  border: 1px solid #d8dbdf;
+  border-radius: 8px;
+  background: #fff;
+  cursor: text;
+  transition: border-color .15s, box-shadow .15s;
+  min-height: 42px;
+  align-items: center;
+}
+.tag-input-wrap:focus-within {
+  border-color: #0b6e6e;
+  box-shadow: 0 0 0 3px rgba(11,110,110,.12);
+}
+.tag-input-wrap .tag {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  background: #e6f4f4;
+  color: #0b6e6e;
+  border-radius: 5px;
+  padding: .15rem .5rem;
+  font-size: .8125rem;
+  font-weight: 500;
+}
+.tag-input-wrap .tag button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0b6e6e;
+  padding: 0;
+  line-height: 1;
+  font-size: .9rem;
+  opacity: .7;
+}
+.tag-input-wrap .tag button:hover { opacity: 1; }
+.tag-input-wrap input[type="text"] {
+  border: none;
+  outline: none;
+  font-size: .875rem;
+  font-family: inherit;
+  background: transparent;
+  flex: 1;
+  min-width: 100px;
+  padding: .1rem 0;
+  color: #1a1d21;
+}
+.tag-hint {
+  font-size: .75rem;
+  color: #9aa0a6;
+  margin-top: .35rem;
+}
+
+/* File upload area */
+.file-drop-area {
+  border: 2px dashed #d8dbdf;
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.file-drop-area:hover,
+.file-drop-area.drag-over {
+  border-color: #0b6e6e;
+  background: #f4fbfb;
+}
+.file-drop-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.file-drop-label {
+  font-size: .875rem;
+  color: #6b7177;
+  pointer-events: none;
+}
+.file-drop-label strong { color: #0b6e6e; }
+.file-list {
+  margin-top: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f5f6f7;
+  border-radius: 6px;
+  padding: .4rem .65rem;
+  font-size: .8125rem;
+  gap: .5rem;
+}
+.file-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item button {
+  background: none;
+  border: none;
+  color: #9aa0a6;
+  cursor: pointer;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+.file-item button:hover { color: #d93025; }
+
+/* Pending confirmation screen */
+.reg-pending {
+  text-align: center;
+  padding: 1rem 0 .5rem;
+}
+.reg-pending-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e6f4f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: #0b6e6e;
+}
+.reg-pending h2 {
+  font-size: 1.2rem;
+  margin-bottom: .6rem;
+}
+.reg-pending p {
+  color: #6b7177;
+  font-size: .9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.reg-pending .btn { display: inline-flex; }
+
+/* Step nav row */
+.reg-nav {
+  display: flex;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+.reg-nav .btn { flex: 1; justify-content: center; }

@@ -1,0 +1,51 @@
+/* Component, banner. Solid teal block used for page-level highlights. */
+
+.banner {
+  background: #0b6e6e;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+.banner .banner-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+.banner .banner-sub {
+  color: rgba(255, 255, 255, .85);
+  font-size: .875rem;
+}
+.banner .banner-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-shrink: 0;
+}
+.banner .btn {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0b6e6e;
+}
+.banner .btn:hover {
+  background: rgba(255, 255, 255, .9);
+}
+.banner .btn-primary {
+  background: rgba(255, 255, 255, .15);
+  border-color: rgba(255, 255, 255, .4);
+  color: #ffffff;
+}
+.banner .btn-primary:hover {
+  background: rgba(255, 255, 255, .25);
+}
+
+@media (max-width: 600px) {
+  .banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

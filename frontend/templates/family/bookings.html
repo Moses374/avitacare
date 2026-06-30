@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Bookings, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-bookings.css" />
+</head>
+<body data-page="/family/bookings.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Bookings');
+
+  function reviewModal(booking) {
+    openModal(`
+      <div class="modal-header"><h2>Leave a review</h2>
+        <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+      </div>
+      <div class="modal-body">
+        <div id="review-error" class="error-banner"></div>
+        <form id="review-form">
+          <div class="form-group">
+            <label for="rating">Rating, 1 to 5</label>
+            <select id="rating">
+              <option value="5">5, Excellent</option>
+              <option value="4">4, Good</option>
+              <option value="3">3, Average</option>
+              <option value="2">2, Below average</option>
+              <option value="1">1, Poor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="comment">Comment</label>
+            <textarea id="comment" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-action="close">Cancel</button>
+        <button class="btn btn-primary" id="submit-review-btn">Submit review</button>
+      </div>
+    `);
+    document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+    document.getElementById('submit-review-btn').addEventListener('click', async () => {
+      hideError('review-error');
+      try {
+        await apiFetch('/reviews/', {
+          method: 'POST',
+          body: JSON.stringify({
+            booking: booking.id,
+            rating: Number(document.getElementById('rating').value),
+            comment: document.getElementById('comment').value,
+          }),
+        });
+        closeModal();
+        toast('Review submitted.', 'success');
+        loadBookings();
+      } catch (err) {
+        showError('review-error', formatApiError(err));
+      }
+    });
+  }
+
+  async function loadBookings() {
+    const bookings = await apiFetch('/bookings/');
+    window.__bookings = bookings;
+    renderTable('bookings-table', {
+      columns: [
+        { header: 'Caregiver', render: (b) => b.caregiver_name },
+        { header: 'Start', render: (b) => new Date(b.scheduled_start).toLocaleString() },
+        { header: 'End', render: (b) => new Date(b.scheduled_end).toLocaleString() },
+        { header: 'Status', render: (b) => statusLabel(b.status) },
+        { header: '', render: (b) => b.status === 'completed'
+            ? `<button class="btn btn-sm" data-review="${b.id}">Leave review</button>`
+            : '' },
+      ],
+      rows: bookings,
+      emptyTitle: 'No bookings yet',
+      emptySub: 'Bookings appear here once you confirm a caregiver match.',
+      emptyIcon: 'calendar',
+    });
+    document.querySelectorAll('[data-review]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = Number(btn.getAttribute('data-review'));
+        reviewModal(window.__bookings.find((b) => b.id === id));
+      });
+    });
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Bookings</h1></div>
+    <div class="section" id="bookings-table">${loadingState()}</div>
+  `);
+  loadBookings();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+/* Page, 404. */
+
+.error-wrap {
+  max-width: 480px;
+  margin: 6rem auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+.error-wrap .error-code {
+  font-size: .8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #0b6e6e;
+  margin-bottom: 1rem;
+}
+.error-wrap .icon {
+  color: #9aa0a6;
+  margin-bottom: 1rem;
+}
+.error-wrap h1 {
+  font-size: 1.5rem;
+  margin-bottom: .5rem;
+}
+.error-wrap p {
+  color: #6b7177;
+  margin-bottom: 1.5rem;
+}

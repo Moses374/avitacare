@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.db import models
-from users.models import User
+
 from service_requests.models import ServiceRequest
 
 
@@ -11,8 +12,12 @@ class Booking(models.Model):
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'
 
-    caregiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='caregiver_bookings')
-    family = models.ForeignKey(User, on_delete=models.CASCADE, related_name='family_bookings')
+    caregiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='caregiver_bookings'
+    )
+    family = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='family_bookings'
+    )
     service_request = models.OneToOneField(ServiceRequest, on_delete=models.CASCADE, related_name='booking')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     scheduled_start = models.DateTimeField()
@@ -20,6 +25,9 @@ class Booking(models.Model):
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'bookings'
 
     def __str__(self):
         return f'Booking {self.id}: {self.caregiver.full_name} ↔ {self.family.full_name} [{self.status}]'

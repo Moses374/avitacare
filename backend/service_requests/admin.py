@@ -6,4 +6,4 @@ from .models import ServiceRequest
 class ServiceRequestAdmin(admin.ModelAdmin):
     list_display = ['family', 'care_type', 'urgency_level', 'status', 'location', 'created_at']
     list_filter = ['care_type', 'urgency_level', 'status']
-    search_fields = ['family__email', 'location']
+    search_fields = ['family__email', 'location__display_name']

@@ -1,0 +1,128 @@
+/* Component, location select. Meilisearch-backed combobox for county / sub-county fields. */
+
+.location-select {
+  position: relative;
+}
+
+.location-select-field {
+  position: relative;
+}
+.location-select-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: .6rem .75rem;
+  padding-right: 2.1rem;
+  border: 1px solid #d8dbdf;
+  border-radius: 8px;
+  font-size: .875rem;
+  font-family: inherit;
+  background: #ffffff;
+  color: #1a1d21;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.location-select-input::placeholder {
+  color: #9aa0a6;
+}
+.location-select-input:hover {
+  border-color: #b9bdc2;
+}
+.location-select-input:focus {
+  outline: none;
+  border-color: #0b6e6e;
+  box-shadow: 0 0 0 3px rgba(11, 110, 110, .12);
+}
+
+/* Locked / selected state, reads like a chip without changing layout. */
+.location-select.is-locked .location-select-input {
+  background: #f6faf9;
+  border-color: #bcdad8;
+  color: #0b6e6e;
+  font-weight: 500;
+  cursor: default;
+}
+
+.location-select-clear {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7177;
+  cursor: pointer;
+}
+.location-select-clear:hover {
+  background: #eef1f2;
+  color: #1a1d21;
+}
+.location-select-clear.hidden {
+  display: none;
+}
+
+.location-select-listbox {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: .35rem;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #e3e5e8;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(20, 24, 28, .12);
+}
+.location-select-listbox.hidden {
+  display: none;
+}
+
+.location-select-option {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .5rem .6rem;
+  border-radius: 6px;
+  font-size: .8125rem;
+  color: #1a1d21;
+  cursor: pointer;
+}
+.location-select-option [data-icon] {
+  color: #9aa0a6;
+  flex-shrink: 0;
+}
+.location-select-option-label {
+  flex: 1;
+}
+.location-select-option-label mark {
+  background: transparent;
+  color: #0b6e6e;
+  font-weight: 600;
+}
+.location-select-option-level {
+  flex-shrink: 0;
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: #9aa0a6;
+}
+.location-select-option:hover,
+.location-select-option.is-active {
+  background: #f6faf9;
+}
+
+.location-select-empty,
+.location-select-loading,
+.location-select-error {
+  padding: .65rem .6rem;
+  font-size: .8125rem;
+  color: #6b7177;
+}
+.location-select-error {
+  color: #b3261e;
+}

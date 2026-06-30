@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from bookings.models import Booking
+from caregivers.models import CaregiverProfile
 
 
 class Review(models.Model):
@@ -18,7 +19,7 @@ class Review(models.Model):
 
     def _update_caregiver_rating(self):
         caregiver = self.booking.caregiver
-        profile = caregiver.caregiver_profile
+        profile = CaregiverProfile.objects.get(pk=caregiver.pk)
         reviews = Review.objects.filter(booking__caregiver=caregiver)
         profile.avg_rating = reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
         profile.total_reviews = reviews.count()

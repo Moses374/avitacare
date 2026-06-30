@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Browse caregivers, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/searchbar.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/components/location-select.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-caregivers.css" />
+</head>
+<body data-page="/family/caregivers.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script src="/static/js/location-select.js"></script>
+<script>
+  mountAppShell('Browse caregivers');
+
+  let caregiverLocationFilter = null;
+
+  function verifiedBadge(verified) {
+    return verified
+      ? '<span class="status status-success"><span data-icon="check-circle" data-size="14"></span>Verified</span>'
+      : '<span class="status status-muted"><span data-icon="clock" data-size="14"></span>Pending</span>';
+  }
+
+  function toSkillKey(label) {
+    return label.trim().toLowerCase().replace(/\s+/g, '_');
+  }
+  function fromSkillKey(key) {
+    return key.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  }
+
+  async function loadCaregivers() {
+    const skill = document.getElementById('search-skill').value;
+    const location = caregiverLocationFilter.getValue();
+    const params = new URLSearchParams();
+    if (skill) params.set('skill', skill);
+    if (location) params.set('location_id', location.location_id);
+
+    renderInto('caregivers-table', loadingState());
+    const caregivers = await apiFetch(`/caregivers/?${params.toString()}`);
+    renderTable('caregivers-table', {
+      columns: [
+        { header: 'Name', render: (c) => c.full_name },
+        { header: 'Skills', render: (c) => (c.skills || []).map(fromSkillKey).join(', ') || 'None listed' },
+        { header: 'Location', render: (c) => (c.location ? c.location.display_name : 'Not set') },
+        { header: 'Experience', render: (c) => `${c.years_experience} yrs` },
+        { header: 'Rating', render: (c) => `${Number(c.avg_rating).toFixed(1)} (${c.total_reviews})` },
+        { header: 'Status', render: (c) => verifiedBadge(c.verified) },
+      ],
+      rows: caregivers,
+      emptyTitle: 'No caregivers found',
+      emptySub: 'Try a different skill or location, or check back once more caregivers are verified.',
+      emptyIcon: 'search',
+    });
+  }
+
+  function init() {
+    renderInto('page-content', `
+      <div class="section-header"><h1>Browse caregivers</h1></div>
+      <div class="section">
+        <div class="section-body padded">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="search-skill">Skill</label>
+              <select id="search-skill">
+                <option value="">All skills</option>
+                <option value="elderly_care">Elderly care</option>
+                <option value="child_care">Child care</option>
+                <option value="disability_support">Disability support</option>
+                <option value="post_hospital_recovery">Post hospital recovery</option>
+                <option value="palliative_care">Palliative care</option>
+              </select>
+            </div>
+            ${locationSelectMarkup({ id: 'search-location', label: 'Location', placeholder: 'Nairobi, Mombasa...' })}
+          </div>
+          <button class="btn btn-primary" id="search-btn">Search</button>
+        </div>
+      </div>
+      <div class="section" id="caregivers-table">${loadingState()}</div>
+    `);
+    caregiverLocationFilter = initLocationSelect('search-location');
+    document.getElementById('search-btn').addEventListener('click', loadCaregivers);
+    loadCaregivers();
+  }
+
+  init();
+</script>
+</body>
+</html>

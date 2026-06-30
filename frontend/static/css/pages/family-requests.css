@@ -1,0 +1,64 @@
+/* Page, family requests. */
+
+.requests-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+/* Tag input: skills field inside the new-request modal */
+.tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: .5rem .65rem;
+  border: 1px solid #d8dbdf;
+  border-radius: 8px;
+  background: #fff;
+  cursor: text;
+  transition: border-color .15s, box-shadow .15s;
+  min-height: 42px;
+  align-items: center;
+}
+.tag-input-wrap:focus-within {
+  border-color: #0b6e6e;
+  box-shadow: 0 0 0 3px rgba(11,110,110,.12);
+}
+.tag-input-wrap .tag {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  background: #e6f4f4;
+  color: #0b6e6e;
+  border-radius: 5px;
+  padding: .15rem .5rem;
+  font-size: .8125rem;
+  font-weight: 500;
+}
+.tag-input-wrap .tag button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0b6e6e;
+  padding: 0;
+  line-height: 1;
+  font-size: .9rem;
+  opacity: .7;
+}
+.tag-input-wrap .tag button:hover { opacity: 1; }
+.tag-input-wrap input[type="text"] {
+  border: none;
+  outline: none;
+  font-size: .875rem;
+  font-family: inherit;
+  background: transparent;
+  flex: 1;
+  min-width: 120px;
+  padding: .1rem 0;
+  color: #1a1d21;
+}
+.tag-hint {
+  font-size: .75rem;
+  color: #9aa0a6;
+  margin-top: .35rem;
+}

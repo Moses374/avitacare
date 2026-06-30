@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Audit log, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/audit-logs.css" />
+</head>
+<body data-page="/admin/audit-log">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Audit log');
+
+  async function loadLogs() {
+    const logs = await apiFetch('/admin-portal/audit-logs/');
+    renderTable('audit-table', {
+      columns: [
+        { header: 'Time', render: (l) => new Date(l.timestamp).toLocaleString() },
+        { header: 'Admin', render: (l) => l.admin_email || 'Unknown' },
+        { header: 'Action', render: (l) => l.action },
+        { header: 'Target', render: (l) => l.target_email || 'None' },
+        { header: 'Details', render: (l) => l.details || '' },
+      ],
+      rows: logs,
+      emptyTitle: 'No actions logged yet',
+      emptySub: 'Administrative actions will be recorded here.',
+      emptyIcon: 'file-text',
+    });
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Audit log</h1></div>
+    <div class="section" id="audit-table">${loadingState()}</div>
+  `);
+  loadLogs();
+</script>
+</body>
+</html>

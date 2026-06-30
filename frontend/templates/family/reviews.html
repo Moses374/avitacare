@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Reviews, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-reviews.css" />
+</head>
+<body data-page="/family/reviews.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Reviews');
+
+  async function loadReviews() {
+    const [reviews, bookings] = await Promise.all([apiFetch('/reviews/'), apiFetch('/bookings/')]);
+    const bookingById = Object.fromEntries(bookings.map((b) => [b.id, b]));
+    renderTable('reviews-table', {
+      columns: [
+        { header: 'Rating', render: (r) => `${r.rating} / 5` },
+        { header: 'Caregiver', render: (r) => (bookingById[r.booking] || {}).caregiver_name || 'Unknown' },
+        { header: 'Comment', render: (r) => r.comment || '' },
+        { header: 'Date', render: (r) => new Date(r.created_at).toLocaleDateString() },
+      ],
+      rows: reviews,
+      emptyTitle: 'No reviews yet',
+      emptySub: 'You can review a caregiver once a booking is completed.',
+      emptyIcon: 'star',
+    });
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Reviews</h1></div>
+    <div class="section" id="reviews-table">${loadingState()}</div>
+  `);
+  loadReviews();
+</script>
+</body>
+</html>

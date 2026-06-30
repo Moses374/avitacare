@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Settings, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-settings.css" />
+</head>
+<body data-page="/family/settings.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Settings');
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Settings</h1></div>
+    <div class="section">
+      <div class="section-title">Change password</div>
+      <div class="section-body padded">
+        <div id="password-error" class="error-banner"></div>
+        <form id="password-form" class="password-form">
+          <div class="form-group">
+            <label for="old_password">Current password</label>
+            <input type="password" id="old_password" required />
+          </div>
+          <div class="form-group">
+            <label for="new_password">New password</label>
+            <input type="password" id="new_password" required />
+          </div>
+          <div class="form-group">
+            <label for="new_password_confirm">Confirm new password</label>
+            <input type="password" id="new_password_confirm" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Update password</button>
+        </form>
+      </div>
+    </div>
+  `);
+
+  document.getElementById('password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError('password-error');
+    try {
+      await apiFetch('/auth/change-password/', {
+        method: 'POST',
+        body: JSON.stringify({
+          old_password: document.getElementById('old_password').value,
+          new_password: document.getElementById('new_password').value,
+          new_password_confirm: document.getElementById('new_password_confirm').value,
+        }),
+      });
+      toast('Password updated.', 'success');
+      document.getElementById('password-form').reset();
+    } catch (err) {
+      showError('password-error', formatApiError(err));
+    }
+  });
+</script>
+</body>
+</html>

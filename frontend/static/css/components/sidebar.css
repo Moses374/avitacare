@@ -1,0 +1,87 @@
+/* Component, sidebar. The authenticated app shell, sidebar plus content frame. */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem .75rem;
+  background: #0b6e6e;
+}
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  font-size: .95rem;
+  color: #ffffff;
+  padding: 0 .5rem .9rem .5rem;
+  margin-bottom: .25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, .18);
+}
+.sidebar .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .15);
+  color: #ffffff;
+}
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: .5rem;
+}
+.sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .6rem;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, .8);
+  font-size: .875rem;
+  font-weight: 500;
+}
+.sidebar .nav-item:hover {
+  background: rgba(255, 255, 255, .1);
+  color: #ffffff;
+  text-decoration: none;
+}
+.sidebar .nav-item.active {
+  background: #ffffff;
+  color: #0b6e6e;
+  font-weight: 600;
+}
+.sidebar .nav-spacer {
+  flex: 1;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  box-sizing: border-box;
+  padding: 2rem;
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    display: none;
+  }
+}

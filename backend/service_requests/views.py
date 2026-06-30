@@ -1,4 +1,6 @@
 from rest_framework import generics, permissions
+from rest_framework.exceptions import PermissionDenied
+
 from .models import ServiceRequest
 from .serializers import ServiceRequestSerializer
 
@@ -12,6 +14,11 @@ class ServiceRequestListCreateView(generics.ListCreateAPIView):
         if user.role == 'family':
             return ServiceRequest.objects.filter(family=user)
         return ServiceRequest.objects.filter(status='open')
+
+    def perform_create(self, serializer):
+        if self.request.user.role != 'family':
+            raise PermissionDenied('Only families can submit service requests.')
+        serializer.save()
 
 
 class ServiceRequestDetailView(generics.RetrieveUpdateDestroyAPIView):

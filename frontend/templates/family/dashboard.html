@@ -3,65 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Family Dashboard — Avitacare</title>
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Dashboard, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/banner.css" />
+  <link rel="stylesheet" href="/static/css/components/stats.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/family-dashboard.css" />
 </head>
-<body>
-<div class="container mt-2">
-  <h1>Welcome, <span id="user-name"></span></h1>
-  <p class="text-muted">Submit care requests and manage your bookings.</p>
+<body data-page="/family/dashboard.html">
 
-  <div style="margin-top:1rem;">
-    <a href="/family/request.html" class="btn btn-primary">+ New Service Request</a>
-  </div>
-
-  <div class="card mt-3">
-    <h2>My Service Requests</h2>
-    <div id="requests-list" class="mt-2">Loading…</div>
-  </div>
-
-  <div class="card mt-3">
-    <h2>My Bookings</h2>
-    <div id="bookings-list" class="mt-2">Loading…</div>
-  </div>
-</div>
-
+<script src="/static/js/icons.js"></script>
 <script src="/static/js/app.js"></script>
 <script>
-  requireAuth();
-  document.getElementById('user-name').textContent = getUser()?.first_name || '';
+  mountAppShell('Dashboard');
 
   async function loadDashboard() {
-    const [requests, bookings] = await Promise.all([
+    const content = document.getElementById('page-content');
+    renderInto(content, loadingState());
+
+    const [requests, bookings, reviews, notifications] = await Promise.all([
       apiFetch('/requests/'),
       apiFetch('/bookings/'),
+      apiFetch('/reviews/'),
+      apiFetch('/notifications/'),
     ]);
 
-    const reqList = document.getElementById('requests-list');
-    reqList.innerHTML = requests.length
-      ? requests.map(r => `
-          <div class="card mt-1">
-            <strong>${r.care_type.replace('_', ' ')}</strong>
-            <span class="badge badge-${r.status === 'open' ? 'pending' : 'verified'}" style="float:right">${r.status}</span>
-            <p class="text-muted">${r.location} · ${r.urgency_level} urgency</p>
-            ${r.status === 'open'
-              ? `<a href="/family/matches.html?request_id=${r.id}" class="btn btn-outline mt-1">View Matches</a>`
-              : ''}
-          </div>`).join('')
-      : '<p class="text-muted">No service requests yet.</p>';
+    const activeRequests = requests.filter((r) => r.status === 'open').length;
+    const unread = notifications.filter((n) => !n.is_read).length;
 
-    const bkList = document.getElementById('bookings-list');
-    bkList.innerHTML = bookings.length
-      ? bookings.map(b => `
-          <div class="card mt-1">
-            <strong>${b.caregiver_name}</strong>
-            <span class="badge badge-${b.status === 'completed' ? 'verified' : 'pending'}" style="float:right">${b.status}</span>
-            <p class="text-muted">${b.scheduled_start} → ${b.scheduled_end}</p>
-            ${b.status === 'completed'
-              ? `<a href="/family/review.html?booking_id=${b.id}" class="btn btn-outline mt-1">Leave Review</a>`
-              : ''}
-          </div>`).join('')
-      : '<p class="text-muted">No bookings yet.</p>';
+    const userName = (getUser() || {}).first_name || 'there';
+    renderInto(content, `
+      <div class="banner">
+        <div>
+          <div class="banner-title">Welcome back, ${userName}</div>
+          <div class="banner-sub">Track your requests, bookings, and caregiver matches in one place.</div>
+        </div>
+        <div class="banner-actions">
+          <a href="/family/requests.html" class="btn btn-primary"><span data-icon="plus" data-size="15"></span>New request</a>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label"><span data-icon="calendar" data-size="14"></span>Total bookings</div>
+          <div class="stat-value">${bookings.length}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="clipboard" data-size="14"></span>Active requests</div>
+          <div class="stat-value">${activeRequests}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="star" data-size="14"></span>Reviews</div>
+          <div class="stat-value">${reviews.length}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="bell" data-size="14"></span>Notifications</div>
+          <div class="stat-value">${unread}</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Recent service requests</h2>
+        <a href="/family/requests.html" class="btn btn-sm">View all</a>
+      </div>
+      <div class="section" id="requests-section"></div>
+
+      <div class="section-header family-dashboard-section-gap">
+        <h2>Recent bookings</h2>
+        <a href="/family/bookings.html" class="btn btn-sm">View all</a>
+      </div>
+      <div class="section" id="bookings-section"></div>
+    `);
+
+    renderTable('requests-section', {
+      columns: [
+        { header: 'Care type', render: (r) => r.care_type.replace(/_/g, ' ') },
+        { header: 'Location', render: (r) => (r.location ? r.location.display_name : 'Not set') },
+        { header: 'Urgency', render: (r) => r.urgency_level },
+        { header: 'Status', render: (r) => statusLabel(r.status) },
+      ],
+      rows: requests.slice(0, 5),
+      emptyTitle: 'No service requests yet',
+      emptySub: 'Submit a request to start matching with caregivers.',
+      emptyIcon: 'clipboard',
+    });
+
+    renderTable('bookings-section', {
+      columns: [
+        { header: 'Caregiver', render: (b) => b.caregiver_name },
+        { header: 'Start', render: (b) => new Date(b.scheduled_start).toLocaleString() },
+        { header: 'Status', render: (b) => statusLabel(b.status) },
+      ],
+      rows: bookings.slice(0, 5),
+      emptyTitle: 'No bookings yet',
+      emptySub: 'Bookings will appear here once you confirm a caregiver match.',
+      emptyIcon: 'calendar',
+    });
   }
 
   loadDashboard();

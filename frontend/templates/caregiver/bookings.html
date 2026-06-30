@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Bookings, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/status.css" />
+  <link rel="stylesheet" href="/static/css/components/modal.css" />
+  <link rel="stylesheet" href="/static/css/components/toast.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/caregiver-bookings.css" />
+</head>
+<body data-page="/caregiver/bookings.html">
+
+<script src="/static/js/icons.js"></script>
+<script src="/static/js/app.js"></script>
+<script>
+  mountAppShell('Bookings');
+
+  const NEXT_ACTION = {
+    pending:   { status: 'confirmed', label: 'Confirm' },
+    confirmed: { status: 'ongoing',   label: 'Start' },
+    ongoing:   { status: 'completed', label: 'Complete' },
+  };
+
+  async function updateStatus(id, status) {
+    try {
+      await apiFetch(`/bookings/${id}/status/`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      toast('Booking updated.', 'success');
+      loadBookings();
+    } catch (err) {
+      toast(formatApiError(err), 'error');
+    }
+  }
+
+  function cancelBooking(id) {
+    confirmDialog({
+      title: 'Cancel booking',
+      message: 'Are you sure you want to cancel this booking? This cannot be undone.',
+      confirmLabel: 'Cancel booking',
+      danger: true,
+      onConfirm: () => updateStatus(id, 'cancelled'),
+    });
+  }
+
+  async function loadBookings() {
+    const bookings = await apiFetch('/bookings/');
+    renderTable('bookings-table', {
+      columns: [
+        { header: 'Family', render: (b) => b.family_name },
+        { header: 'Start', render: (b) => new Date(b.scheduled_start).toLocaleString() },
+        { header: 'End', render: (b) => new Date(b.scheduled_end).toLocaleString() },
+        { header: 'Status', render: (b) => statusLabel(b.status) },
+        { header: '', render: (b) => {
+            const next = NEXT_ACTION[b.status];
+            const buttons = [];
+            if (next) buttons.push(`<button class="btn btn-sm btn-primary" data-advance="${b.id}" data-status="${next.status}">${next.label}</button>`);
+            if (b.status === 'pending' || b.status === 'confirmed') buttons.push(`<button class="btn btn-sm" data-cancel="${b.id}">Cancel</button>`);
+            return buttons.join(' ');
+          } },
+      ],
+      rows: bookings,
+      emptyTitle: 'No bookings yet',
+      emptySub: 'Bookings will appear here once a family confirms a request.',
+      emptyIcon: 'calendar',
+    });
+    document.querySelectorAll('[data-advance]').forEach((btn) => {
+      btn.addEventListener('click', () => updateStatus(btn.getAttribute('data-advance'), btn.getAttribute('data-status')));
+    });
+    document.querySelectorAll('[data-cancel]').forEach((btn) => {
+      btn.addEventListener('click', () => cancelBooking(btn.getAttribute('data-cancel')));
+    });
+  }
+
+  renderInto('page-content', `
+    <div class="section-header"><h1>Bookings</h1></div>
+    <div class="section" id="bookings-table">${loadingState()}</div>
+  `);
+  loadBookings();
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+/* Component, sections and list rows. Structured containers used in place of cards. */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.section-header h1,
+.section-header h2 {
+  margin: 0;
+}
+.section-header .page-subtitle {
+  color: #6b7177;
+  margin-top: .35rem;
+  font-size: .875rem;
+}
+
+.section {
+  border: 1px solid #e3e5e8;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .85rem 1.25rem;
+  background: #f6faf9;
+  border-bottom: 1px solid #e3e5e8;
+  border-radius: 8px 8px 0 0;
+  font-size: .875rem;
+  font-weight: 600;
+}
+.section-body.padded {
+  padding: 1.25rem;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.25rem;
+  border-bottom: 1px solid #e3e5e8;
+  gap: 1rem;
+}
+.list-row:hover {
+  background: #f6faf9;
+}
+.list-row:last-child {
+  border-bottom: none;
+}
+.list-row .list-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+.list-row .list-row-title {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 500;
+}
+.list-row .list-row-sub {
+  font-size: .8125rem;
+  color: #6b7177;
+}
+.list-row .list-row-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-shrink: 0;
+}
+
+.divider {
+  border-top: 1px solid #e3e5e8;
+  margin: 1rem 0;
+}

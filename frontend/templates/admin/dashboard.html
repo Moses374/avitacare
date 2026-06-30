@@ -3,75 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard — Avitacare</title>
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <title>Dashboard, Avitacare</title>
+  <link rel="stylesheet" href="/static/css/components/typography.css" />
+  <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/navbar.css" />
+  <link rel="stylesheet" href="/static/css/components/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/components/sections.css" />
+  <link rel="stylesheet" href="/static/css/components/banner.css" />
+  <link rel="stylesheet" href="/static/css/components/stats.css" />
+  <link rel="stylesheet" href="/static/css/components/table.css" />
+  <link rel="stylesheet" href="/static/css/components/loading.css" />
+  <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/pages/admin-dashboard.css" />
 </head>
-<body>
-<div class="container mt-2">
-  <h1>Admin Dashboard</h1>
-  <p class="text-muted">Caregiver verification and platform oversight.</p>
+<body data-page="/admin/">
 
-  <div class="card mt-3">
-    <h2>Pending Verifications</h2>
-    <div id="pending-list" class="mt-2">Loading…</div>
-  </div>
-
-  <div class="card mt-3">
-    <h2>Audit Log</h2>
-    <div id="audit-list" class="mt-2">Loading…</div>
-  </div>
-</div>
-
+<script src="/static/js/icons.js"></script>
 <script src="/static/js/app.js"></script>
 <script>
-  requireAuth();
+  mountAppShell('Dashboard');
 
-  async function loadDashboard() {
-    const [pending, logs] = await Promise.all([
-      apiFetch('/admin-portal/pending-verifications/'),
-      apiFetch('/admin-portal/audit-logs/'),
-    ]);
-
-    const pendingEl = document.getElementById('pending-list');
-    pendingEl.innerHTML = pending.length
-      ? pending.map(c => `
-          <div class="card mt-1">
-            <strong>${c.user_name}</strong> — ${c.location}
-            <div style="float:right;">
-              <button class="btn btn-success" onclick="verifyCaregiver(${c.id}, 'approve')">Approve</button>
-              <button class="btn btn-danger" onclick="verifyCaregiver(${c.id}, 'reject')" style="margin-left:.5rem">Reject</button>
-            </div>
-            <p class="text-muted mt-1">Experience: ${c.years_experience} yrs · Skills: ${(c.skills || []).join(', ')}</p>
-          </div>`).join('')
-      : '<p class="text-muted">No pending verifications.</p>';
-
-    const auditEl = document.getElementById('audit-list');
-    auditEl.innerHTML = logs.length
-      ? `<table style="width:100%; border-collapse:collapse; font-size:.875rem;">
-           <thead><tr>
-             <th style="text-align:left;padding:.4rem;">Time</th>
-             <th style="text-align:left;padding:.4rem;">Admin</th>
-             <th style="text-align:left;padding:.4rem;">Action</th>
-             <th style="text-align:left;padding:.4rem;">Target</th>
-           </tr></thead>
-           <tbody>
-             ${logs.map(l => `<tr>
-               <td style="padding:.4rem;">${new Date(l.timestamp).toLocaleString()}</td>
-               <td style="padding:.4rem;">${l.admin_email}</td>
-               <td style="padding:.4rem;">${l.action}</td>
-               <td style="padding:.4rem;">${l.target_email || '—'}</td>
-             </tr>`).join('')}
-           </tbody>
-         </table>`
-      : '<p class="text-muted">No actions logged yet.</p>';
+  function fromKey(key) {
+    return (key || '').replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
   }
 
-  async function verifyCaregiver(id, action) {
-    await apiFetch(`/admin-portal/verify-caregiver/${id}/`, {
-      method: 'POST',
-      body: JSON.stringify({ action }),
+  const URGENCY_CLASS = { high: 'status-danger', medium: 'status-warning', low: 'status-muted' };
+  function urgencyLabel(level) {
+    const cls = URGENCY_CLASS[level] || 'status-muted';
+    return `<span class="status ${cls}"><span data-icon="alert-triangle" data-size="14"></span>${fromKey(level)}</span>`;
+  }
+
+  async function loadDashboard() {
+    const content = document.getElementById('page-content');
+    renderInto(content, loadingState());
+
+    const [report, pending, queueData] = await Promise.all([
+      apiFetch('/admin-portal/reports/'),
+      apiFetch('/admin-portal/pending-verifications/'),
+      apiFetch('/matching/queue/'),
+    ]);
+    const queue = queueData.queue || [];
+
+    const userName = (getUser() || {}).first_name || 'Admin';
+    renderInto(content, `
+      <div class="banner">
+        <div>
+          <div class="banner-title">Welcome back, ${userName}</div>
+          <div class="banner-sub">${report.caregivers.pending_verification} caregiver profile(s) awaiting review.</div>
+        </div>
+        <div class="banner-actions">
+          <a href="/admin/verifications" class="btn btn-primary"><span data-icon="shield" data-size="15"></span>Review now</a>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label"><span data-icon="users" data-size="14"></span>Total users</div>
+          <div class="stat-value">${report.users.total}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="shield" data-size="14"></span>Pending verifications</div>
+          <div class="stat-value">${report.caregivers.pending_verification}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="calendar" data-size="14"></span>Active bookings</div>
+          <div class="stat-value">${report.bookings.confirmed + report.bookings.ongoing}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span data-icon="star" data-size="14"></span>Average rating</div>
+          <div class="stat-value">${parseFloat(report.reviews.average_rating || 0).toFixed(1)}</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Request queue, by urgency</h2>
+      </div>
+      <div class="section" id="queue-section"></div>
+
+      <div class="section-header">
+        <h2>Pending verifications</h2>
+        <a href="/admin/verifications" class="btn btn-sm">View all</a>
+      </div>
+      <div class="section" id="pending-section"></div>
+    `);
+
+    renderTable('queue-section', {
+      columns: [
+        { header: 'Family', render: (r) => r.family_name },
+        { header: 'Care type', render: (r) => fromKey(r.care_type) },
+        { header: 'Urgency', render: (r) => urgencyLabel(r.urgency_level) },
+        { header: 'Location', render: (r) => (r.location ? r.location.display_name : 'Not set') },
+        { header: 'Submitted', render: (r) => new Date(r.created_at).toLocaleString() },
+      ],
+      rows: queue.slice(0, 8),
+      emptyTitle: 'No open requests',
+      emptySub: 'Open service requests will appear here, urgent first.',
+      emptyIcon: 'clipboard',
     });
-    loadDashboard();
+
+    renderTable('pending-section', {
+      columns: [
+        { header: 'Name', render: (c) => c.full_name },
+        { header: 'Location', render: (c) => (c.location ? c.location.display_name : '') },
+        { header: 'Experience', render: (c) => `${c.years_experience} yrs` },
+        { header: 'Skills', render: (c) => (c.skills || []).map(fromKey).join(', ') || 'None listed' },
+      ],
+      rows: pending.slice(0, 5),
+      emptyTitle: 'No pending verifications',
+      emptySub: 'New caregiver profiles will appear here for review.',
+      emptyIcon: 'shield',
+    });
   }
 
   loadDashboard();

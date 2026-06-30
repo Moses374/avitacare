@@ -1,0 +1,86 @@
+/* Component, navbar. Public marketing nav and the authenticated topbar. */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #ffffff;
+  border-bottom: 1px solid #e3e5e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 1.5rem;
+}
+.navbar .navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a1d21;
+}
+.navbar .navbar-logo .brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #0b6e6e;
+  color: #ffffff;
+}
+.navbar .navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+.navbar .navbar-links a {
+  color: #6b7177;
+  font-size: .875rem;
+}
+.navbar .navbar-links a:hover {
+  color: #1a1d21;
+  text-decoration: none;
+}
+.navbar .navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+@media (max-width: 860px) {
+  .navbar .navbar-links {
+    display: none;
+  }
+}
+
+/* Authenticated app topbar, paired with the sidebar shell */
+.topbar {
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  background: #f6faf9;
+  border-bottom: 1px solid #e3e5e8;
+}
+.topbar .page-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.topbar .topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.topbar .user-chip {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: #6b7177;
+}

@@ -1,0 +1,16 @@
+/* Page, caregiver notifications. */
+
+.list-row.is-unread {
+  background: #f6faf9;
+}
+.list-row.is-unread .list-row-title {
+  font-weight: 600;
+}
+.list-row.is-unread .list-row-title::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0b6e6e;
+  flex-shrink: 0;
+}
