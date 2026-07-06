@@ -35,9 +35,17 @@ class RegistrationLoginTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_returns_user_and_tokens(self):
-        User.objects.create_user(
+        # Login is gated on verification for caregivers, so the account must be
+        # verified to receive tokens (see accounts.views.LoginView).
+        from caregivers.models import CaregiverProfile
+        from accounts.models import get_or_create_subclass
+        user = User.objects.create_user(
             email='caregiver1@example.com', password='StrongPass123',
             first_name='Amina', last_name='Wanjiru', role='caregiver',
+        )
+        get_or_create_subclass(
+            CaregiverProfile, user,
+            verification_status=CaregiverProfile.VerificationStatus.VERIFIED,
         )
         response = self.client.post(reverse('login'), {
             'email': 'caregiver1@example.com',

@@ -34,7 +34,7 @@ admin_urlpatterns = [
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),
-    path('favicon.ico', RedirectView.as_view(url='/static/favicon.svg', permanent=True)),
+    path('favicon.ico', RedirectView.as_view(url='/static/avitacareicon.png', permanent=False)),
 
     *frontend_urlpatterns,
     *admin_urlpatterns,

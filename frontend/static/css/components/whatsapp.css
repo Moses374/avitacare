@@ -1,0 +1,64 @@
+/* Component, WhatsApp contact reveal. Button + modal contact card. */
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  background: #25d366;
+  border-color: #25d366;
+  color: #ffffff;
+}
+.btn-whatsapp:hover {
+  background: #1fb457;
+  border-color: #1fb457;
+  color: #ffffff;
+}
+.btn-whatsapp svg {
+  flex-shrink: 0;
+}
+
+.wa-contact {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .9rem 1rem;
+  background: #f0faf4;
+  border: 1px solid #c8ecd7;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+}
+
+.wa-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #0b6e6e;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: .95rem;
+  flex-shrink: 0;
+}
+
+.wa-name {
+  font-weight: 600;
+  font-size: .9375rem;
+  color: #1a1d21;
+}
+
+.wa-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .2rem;
+  font-size: .8125rem;
+  color: #128c4b;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+.wa-phone svg {
+  width: 13px;
+  height: 13px;
+}

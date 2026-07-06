@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Profile, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -22,7 +22,9 @@
 <body data-page="/caregiver/profile.html">
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script src="/static/js/location-select.js"></script>
 <script>
   mountAppShell('Profile');
@@ -42,7 +44,7 @@
         <div class="section-title">Professional details</div>
         <div class="section-body padded">
           <div id="profile-error" class="error-banner"></div>
-          <form id="profile-form" class="profile-form">
+          <form id="profile-form" class="profile-form" novalidate>
             <div class="form-group">
               <label for="bio">Bio</label>
               <textarea id="bio" rows="3">${profile.bio || ''}</textarea>
@@ -84,17 +86,19 @@
       e.preventDefault();
       hideError('profile-error');
       const location = locationSelect.getValue();
+      const check = validate(CaregiverProfileSchema, {
+        bio: document.getElementById('bio').value,
+        years_experience: Number(document.getElementById('years_experience').value),
+        location_id: location ? location.location_id : null,
+        skills: document.getElementById('skills').value.split(',').map((s) => s.trim()).filter(Boolean),
+        certifications: document.getElementById('certifications').value.split(',').map((s) => s.trim()).filter(Boolean),
+        is_available: document.getElementById('is_available').checked,
+      });
+      if (!applyValidation(check, { banner: 'profile-error', fields: { location_id: 'profile-location-input' } })) return;
       try {
         await apiFetch('/caregivers/profile/', {
           method: 'PUT',
-          body: JSON.stringify({
-            bio: document.getElementById('bio').value,
-            years_experience: Number(document.getElementById('years_experience').value),
-            location_id: location ? location.location_id : null,
-            skills: document.getElementById('skills').value.split(',').map((s) => s.trim()).filter(Boolean),
-            certifications: document.getElementById('certifications').value.split(',').map((s) => s.trim()).filter(Boolean),
-            is_available: document.getElementById('is_available').checked,
-          }),
+          body: JSON.stringify(check.data),
         });
         toast('Profile updated.', 'success');
       } catch (err) {
@@ -148,13 +152,14 @@
     document.getElementById('upload-submit-btn').addEventListener('click', async () => {
       hideError('upload-error');
       const fileInput = document.getElementById('doc_file');
-      if (!fileInput.files.length) {
-        showError('upload-error', 'Please choose a file.');
-        return;
-      }
+      const check = validate(DocumentUploadSchema, {
+        label: document.getElementById('doc_label').value,
+        file: fileInput.files[0],
+      });
+      if (!applyValidation(check, { banner: 'upload-error', fields: { label: 'doc_label', file: 'doc_file' } })) return;
       const formData = new FormData();
-      formData.append('label', document.getElementById('doc_label').value);
-      formData.append('file', fileInput.files[0]);
+      formData.append('label', check.data.label);
+      formData.append('file', check.data.file);
       try {
         const res = await fetch('/api/caregivers/documents/', {
           method: 'POST',

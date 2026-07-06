@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Service requests, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -23,7 +23,9 @@
 <body data-page="/family/requests.html">
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script src="/static/js/location-select.js"></script>
 <script>
   mountAppShell('Service requests');
@@ -132,24 +134,21 @@
     document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', () => { locationSelect.destroy(); closeModal(); }));
     document.getElementById('submit-request-btn').addEventListener('click', async () => {
       hideError('request-error');
-      const skills = skillsTag.getTags();
       const location = locationSelect.getValue();
-      if (!location) {
-        showError('request-error', 'Please select a location from the suggestions.');
-        return;
-      }
+      const check = validate(ServiceRequestSchema, {
+        care_type: document.getElementById('care_type').value,
+        description: document.getElementById('description').value,
+        location_id: location ? location.location_id : null,
+        urgency_level: document.getElementById('urgency_level').value,
+        required_skills: skillsTag.getTags(),
+        schedule_start: document.getElementById('schedule_start').value,
+        schedule_end: document.getElementById('schedule_end').value,
+      });
+      if (!applyValidation(check, { banner: 'request-error', fields: { location_id: 'request-location-input', required_skills: 'skills-input' } })) return;
       try {
         await apiFetch('/requests/', {
           method: 'POST',
-          body: JSON.stringify({
-            care_type: document.getElementById('care_type').value,
-            description: document.getElementById('description').value,
-            location_id: location.location_id,
-            urgency_level: document.getElementById('urgency_level').value,
-            required_skills: skills,
-            schedule_start: document.getElementById('schedule_start').value,
-            schedule_end: document.getElementById('schedule_end').value,
-          }),
+          body: JSON.stringify(check.data),
         });
         closeModal();
         toast('Service request submitted.', 'success');
@@ -200,6 +199,9 @@
   }
 
   function bookCaregiverModal(request, caregiverId) {
+    // The schedule was already set on the service request — reuse it, don't
+    // ask again. The API defaults the booking dates from the request too.
+    const fmt = (v) => new Date(v).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
     openModal(`
       <div class="modal-header"><h2>Confirm booking</h2>
         <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
@@ -207,19 +209,17 @@
       <div class="modal-body">
         <div id="booking-error" class="error-banner"></div>
         <form id="booking-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="b_start">Start</label>
-              <input type="datetime-local" id="b_start" required />
+          <div class="form-group">
+            <label>Schedule</label>
+            <div class="booking-schedule">
+              <span data-icon="calendar" data-size="15"></span>
+              <span>${fmt(request.schedule_start)} &rarr; ${fmt(request.schedule_end)}</span>
             </div>
-            <div class="form-group">
-              <label for="b_end">End</label>
-              <input type="datetime-local" id="b_end" required />
-            </div>
+            <p class="field-hint">Taken from your service request — no need to enter it again.</p>
           </div>
           <div class="form-group">
             <label for="b_notes">Notes</label>
-            <textarea id="b_notes" rows="2"></textarea>
+            <textarea id="b_notes" rows="2" placeholder="Anything the caregiver should know on arrival (gate code, routines, ...)"></textarea>
           </div>
         </form>
       </div>
@@ -231,16 +231,16 @@
     document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
     document.getElementById('confirm-booking-btn').addEventListener('click', async () => {
       hideError('booking-error');
+      const check = validate(BookingSchema, {
+        caregiver: Number(caregiverId),
+        service_request: request.id,
+        notes: document.getElementById('b_notes').value,
+      });
+      if (!applyValidation(check, { banner: 'booking-error', fields: { notes: 'b_notes' } })) return;
       try {
         await apiFetch('/bookings/', {
           method: 'POST',
-          body: JSON.stringify({
-            caregiver: Number(caregiverId),
-            service_request: request.id,
-            scheduled_start: document.getElementById('b_start').value,
-            scheduled_end: document.getElementById('b_end').value,
-            notes: document.getElementById('b_notes').value,
-          }),
+          body: JSON.stringify(check.data),
         });
         closeModal();
         toast('Booking created.', 'success');

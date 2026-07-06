@@ -35,7 +35,9 @@ services:
   web:
     build: ./backend
     container_name: avitacare-web
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # Migrate, then load the demo dataset (idempotent — skips existing rows),
+    # then serve. seed_demo also imports locations and indexes Meilisearch.
+    command: sh -c "python manage.py migrate && python manage.py seed_demo && python manage.py runserver 0.0.0.0:8000"
     environment:
       SECRET_KEY: your-secret-key-here
       DEBUG: "True"

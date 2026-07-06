@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Bookings, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -17,14 +17,35 @@
   <link rel="stylesheet" href="/static/css/components/toast.css" />
   <link rel="stylesheet" href="/static/css/components/loading.css" />
   <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/components/whatsapp.css" />
   <link rel="stylesheet" href="/static/css/pages/family-bookings.css" />
 </head>
 <body data-page="/family/bookings.html">
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script>
   mountAppShell('Bookings');
+
+  function cancelBooking(id) {
+    confirmDialog({
+      title: 'Cancel booking',
+      message: 'Cancel this booking? The caregiver will be notified and your service request will reopen so you can choose another caregiver.',
+      confirmLabel: 'Cancel booking',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/bookings/${id}/status/`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) });
+          toast('Booking cancelled.', 'success');
+          loadBookings();
+        } catch (err) {
+          toast(formatApiError(err), 'error');
+        }
+      },
+    });
+  }
 
   function reviewModal(booking) {
     openModal(`
@@ -58,14 +79,16 @@
     document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
     document.getElementById('submit-review-btn').addEventListener('click', async () => {
       hideError('review-error');
+      const check = validate(ReviewSchema, {
+        booking: booking.id,
+        rating: Number(document.getElementById('rating').value),
+        comment: document.getElementById('comment').value,
+      });
+      if (!applyValidation(check, { banner: 'review-error' })) return;
       try {
         await apiFetch('/reviews/', {
           method: 'POST',
-          body: JSON.stringify({
-            booking: booking.id,
-            rating: Number(document.getElementById('rating').value),
-            comment: document.getElementById('comment').value,
-          }),
+          body: JSON.stringify(check.data),
         });
         closeModal();
         toast('Review submitted.', 'success');
@@ -85,9 +108,12 @@
         { header: 'Start', render: (b) => new Date(b.scheduled_start).toLocaleString() },
         { header: 'End', render: (b) => new Date(b.scheduled_end).toLocaleString() },
         { header: 'Status', render: (b) => statusLabel(b.status) },
-        { header: '', render: (b) => b.status === 'completed'
-            ? `<button class="btn btn-sm" data-review="${b.id}">Leave review</button>`
-            : '' },
+        { header: '', render: (b) => {
+            const buttons = [waButton(b, 'family')];
+            if (b.status === 'completed') buttons.push(`<button class="btn btn-sm" data-review="${b.id}">Leave review</button>`);
+            if (b.status === 'pending' || b.status === 'confirmed') buttons.push(`<button class="btn btn-sm" data-cancel="${b.id}">Cancel</button>`);
+            return buttons.filter(Boolean).join(' ');
+          } },
       ],
       rows: bookings,
       emptyTitle: 'No bookings yet',
@@ -100,6 +126,10 @@
         reviewModal(window.__bookings.find((b) => b.id === id));
       });
     });
+    document.querySelectorAll('[data-cancel]').forEach((btn) => {
+      btn.addEventListener('click', () => cancelBooking(Number(btn.getAttribute('data-cancel'))));
+    });
+    wireWhatsAppButtons(bookings, 'family');
   }
 
   renderInto('page-content', `

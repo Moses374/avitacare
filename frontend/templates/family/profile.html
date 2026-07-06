@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Profile, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -19,7 +19,9 @@
 <body data-page="/family/profile.html">
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script src="/static/js/location-select.js"></script>
 <script>
   mountAppShell('Profile');
@@ -32,7 +34,7 @@
         <div class="section-title">Household details</div>
         <div class="section-body padded">
           <div id="profile-error" class="error-banner"></div>
-          <form id="profile-form" class="profile-form">
+          <form id="profile-form" class="profile-form" novalidate>
             ${locationSelectMarkup({ id: 'profile-location', label: 'Location', value: profile.location })}
             <p class="field-hint">Your general area helps us surface caregivers near you when you browse or submit a request.</p>
 
@@ -72,15 +74,17 @@
       e.preventDefault();
       hideError('profile-error');
       const location = locationSelect.getValue();
+      const check = validate(FamilyProfileSchema, {
+        location_id: location ? location.location_id : null,
+        preferred_caregiver_type: document.getElementById('preferred_caregiver_type').value,
+        care_recipient_name: document.getElementById('care_recipient_name').value,
+        care_recipient_details: document.getElementById('care_recipient_details').value,
+      });
+      if (!applyValidation(check, { banner: 'profile-error', fields: { location_id: 'profile-location-input' } })) return;
       try {
         await apiFetch('/families/profile/', {
           method: 'PUT',
-          body: JSON.stringify({
-            location_id: location ? location.location_id : null,
-            preferred_caregiver_type: document.getElementById('preferred_caregiver_type').value,
-            care_recipient_name: document.getElementById('care_recipient_name').value,
-            care_recipient_details: document.getElementById('care_recipient_details').value,
-          }),
+          body: JSON.stringify(check.data),
         });
         toast('Profile updated.', 'success');
       } catch (err) {

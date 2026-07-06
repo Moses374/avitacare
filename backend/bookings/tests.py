@@ -108,3 +108,50 @@ class BookingLifecycleTests(APITestCase):
             reverse('booking-status-update', args=[booking_id]), {'status': 'confirmed'}, format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_active_request_cannot_be_double_booked(self):
+        self._create_booking()  # pending booking now occupies the request
+        second = self._create_booking()
+        self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_decline_reopens_request_and_allows_rebooking(self):
+        # Caregiver declines the pending booking (cancelled transition).
+        booking_id = self._create_booking().data['id']
+        self.client.force_authenticate(self.caregiver)
+        decline = self.client.patch(
+            reverse('booking-status-update', args=[booking_id]), {'status': 'cancelled'}, format='json'
+        )
+        self.assertEqual(decline.status_code, status.HTTP_200_OK)
+
+        # Request is open again, not closed.
+        self.service_request.refresh_from_db()
+        self.assertEqual(self.service_request.status, ServiceRequest.Status.OPEN)
+
+        # Family can now book a different caregiver against the same request.
+        other = User.objects.create_user(
+            email='carer2@example.com', password='StrongPass123',
+            first_name='Brian', last_name='Otieno', role='caregiver',
+        )
+        get_or_create_subclass(
+            CaregiverProfile, other, verification_status=CaregiverProfile.VerificationStatus.VERIFIED,
+        )
+        self.client.force_authenticate(self.family)
+        rebook = self.client.post(reverse('booking-list'), {
+            'caregiver': other.id,
+            'service_request': self.service_request.id,
+        }, format='json')
+        self.assertEqual(rebook.status_code, status.HTTP_201_CREATED)
+
+    def test_booking_reuses_request_schedule_when_dates_omitted(self):
+        response = self._create_booking_no_dates()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        booking = Booking.objects.get(pk=response.data['id'])
+        self.assertEqual(booking.scheduled_start, self.service_request.schedule_start)
+        self.assertEqual(booking.scheduled_end, self.service_request.schedule_end)
+
+    def _create_booking_no_dates(self):
+        self.client.force_authenticate(self.family)
+        return self.client.post(reverse('booking-list'), {
+            'caregiver': self.caregiver.id,
+            'service_request': self.service_request.id,
+        }, format='json')

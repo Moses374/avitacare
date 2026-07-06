@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Sign in, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -16,7 +16,7 @@
 
 <div class="auth-shell">
   <aside class="auth-aside">
-    <a class="auth-brand" href="/"><img src="/static/logo-light.svg" alt="Avitacare" height="30" /></a>
+    <a class="auth-brand" href="/"><img src="/static/avitacareicon.png" alt="" height="34" /><span>Avitacare</span></a>
     <div class="auth-pitch">
       <h2>Find trusted caregivers with confidence.</h2>
       <div class="auth-points">
@@ -35,7 +35,7 @@
 
       <div id="error-msg" class="error-banner"></div>
 
-      <form id="login-form">
+      <form id="login-form" novalidate>
         <div class="form-group">
           <label for="email">Email</label>
           <input type="email" id="email" required />
@@ -53,16 +53,20 @@
 </div>
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script>
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError('error-msg');
+    const check = validate(LoginSchema, {
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+    });
+    if (!applyValidation(check, { banner: 'error-msg' })) return;
     try {
-      await login(
-        document.getElementById('email').value,
-        document.getElementById('password').value
-      );
+      await login(check.data.email, check.data.password);
     } catch (err) {
       showError('error-msg', err && err.detail ? err.detail : 'Invalid email or password.');
     }

@@ -182,6 +182,102 @@ function confirmDialog({ title, message, confirmLabel = 'Confirm', danger = fals
   });
 }
 
+// ---------------- WhatsApp contact reveal ----------------
+// Phone numbers are only present on a booking once the caregiver has
+// accepted it (confirmed/ongoing/completed) — the API hides them before that.
+
+// "+254712345678" / "0712345678" → "254712345678" (wa.me format), or null.
+function waNumber(phone) {
+  const digits = String(phone || '').replace(/[\s()-]/g, '');
+  if (/^\+254[17]\d{8}$/.test(digits)) return digits.slice(1);
+  if (/^0[17]\d{8}$/.test(digits)) return '254' + digits.slice(1);
+  if (/^254[17]\d{8}$/.test(digits)) return digits;
+  return null;
+}
+
+// "254712345678" → "+254 712 345 678" for display.
+function waPretty(number) {
+  return `+${number.slice(0, 3)} ${number.slice(3, 6)} ${number.slice(6, 9)} ${number.slice(9)}`;
+}
+
+const WHATSAPP_GLYPH = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.497.1-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+// Counterpart contact + a fitting opener for whichever side is viewing.
+function waContactFor(booking, viewerRole) {
+  const start = new Date(booking.scheduled_start).toLocaleString(undefined, {
+    weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+  });
+  const me = (getUser() || {}).full_name || 'an AvitaCare member';
+  if (viewerRole === 'family') {
+    const first = (booking.caregiver_name || 'there').split(' ')[0];
+    return {
+      name: booking.caregiver_name,
+      phone: booking.caregiver_phone,
+      message: `Hello ${first}, this is ${me} — we're matched on AvitaCare for the booking starting ${start}. I'd love to coordinate the final details with you. Thank you!`,
+    };
+  }
+  const first = (booking.family_name || 'there').split(' ')[0];
+  return {
+    name: booking.family_name,
+    phone: booking.family_phone,
+    message: `Hello ${first}, this is ${me}, your AvitaCare caregiver for the booking starting ${start}. I'm looking forward to helping — feel free to share anything I should know beforehand.`,
+  };
+}
+
+// Action-column button; empty string while the number is still hidden.
+function waButton(booking, viewerRole) {
+  const contact = waContactFor(booking, viewerRole);
+  if (!waNumber(contact.phone)) return '';
+  return `<button class="btn btn-sm btn-whatsapp" data-whatsapp="${booking.id}">${WHATSAPP_GLYPH}WhatsApp</button>`;
+}
+
+function openWhatsAppModal(booking, viewerRole) {
+  const contact = waContactFor(booking, viewerRole);
+  const number = waNumber(contact.phone);
+  if (!number) return;
+  const initials = (contact.name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  openModal(`
+    <div class="modal-header"><h2>Chat on WhatsApp</h2>
+      <button class="icon-btn" data-action="close"><span data-icon="x" data-size="16"></span></button>
+    </div>
+    <div class="modal-body">
+      <div class="wa-contact">
+        <div class="wa-avatar">${initials}</div>
+        <div class="wa-contact-details">
+          <div class="wa-name">${contact.name}</div>
+          <div class="wa-phone">${WHATSAPP_GLYPH}${waPretty(number)}</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="wa-message">Your message</label>
+        <textarea id="wa-message" rows="4">${contact.message}</textarea>
+        <p class="field-hint">WhatsApp opens with this message pre-filled — tweak it here or before sending.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-action="close">Cancel</button>
+      <button class="btn btn-whatsapp" id="wa-open-btn">${WHATSAPP_GLYPH}Open WhatsApp</button>
+    </div>
+  `);
+  document.querySelectorAll('[data-action="close"]').forEach((btn) => btn.addEventListener('click', closeModal));
+  document.getElementById('wa-open-btn').addEventListener('click', () => {
+    const text = document.getElementById('wa-message').value.trim();
+    window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    closeModal();
+  });
+}
+
+// Attach modal openers to every [data-whatsapp] button in the table.
+function wireWhatsAppButtons(bookings, viewerRole) {
+  document.querySelectorAll('[data-whatsapp]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.getAttribute('data-whatsapp'));
+      openWhatsAppModal(bookings.find((b) => b.id === id), viewerRole);
+    });
+  });
+}
+
 // ---------------- Empty / loading states ----------------
 
 function loadingState(message = 'Loading...') {
@@ -270,7 +366,7 @@ function mountAppShell(pageTitle) {
   const path = window.location.pathname;
 
   const sidebarHtml = `
-    <div class="brand"><img src="/static/logo-light.svg" alt="Avitacare" height="28" /></div>
+    <div class="brand"><img src="/static/avitacareicon.png" alt="" height="30" /><span>Avitacare</span></div>
     <nav>
       ${items.map((item) => `
         <a class="nav-item ${path === item.href ? 'active' : ''}" href="${item.href}">

@@ -18,7 +18,11 @@ class Booking(models.Model):
     family = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='family_bookings'
     )
-    service_request = models.OneToOneField(ServiceRequest, on_delete=models.CASCADE, related_name='booking')
+    # A request may accumulate several booking attempts over its life (a
+    # caregiver declines, the family books another), so this is a ForeignKey.
+    # At most one booking is active (pending/confirmed/ongoing) at a time —
+    # enforced in the serializer, not the schema.
+    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='bookings')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     scheduled_start = models.DateTimeField()
     scheduled_end = models.DateTimeField()

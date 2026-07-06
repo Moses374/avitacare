@@ -80,6 +80,9 @@ class BookingStatusUpdateView(APIView):
         if permitted_role == 'caregiver' and user.id != booking.caregiver_id:
             raise PermissionDenied('Only the assigned caregiver can perform this transition.')
 
+        previous_status = booking.status
+        actor_is_caregiver = user.id == booking.caregiver_id
+
         booking.status = new_status
         booking.save(update_fields=['status', 'updated_at'])
 
@@ -92,11 +95,39 @@ class BookingStatusUpdateView(APIView):
                 caregiver_profile.is_available = True
                 caregiver_profile.save(update_fields=['is_available', 'updated_at'])
 
-        if new_status in (Booking.Status.COMPLETED, Booking.Status.CANCELLED):
-            booking.service_request.status = booking.service_request.Status.CLOSED
-            booking.service_request.save(update_fields=['status'])
+        # Request lifecycle: only completion closes the request. A cancellation
+        # or decline reopens it so the family can book another caregiver.
+        service_request = booking.service_request
+        if new_status == Booking.Status.COMPLETED:
+            service_request.status = service_request.Status.CLOSED
+            service_request.save(update_fields=['status'])
+        elif new_status == Booking.Status.CANCELLED:
+            service_request.status = service_request.Status.OPEN
+            service_request.save(update_fields=['status'])
 
-        other_party = booking.family if user.id == booking.caregiver_id else booking.caregiver
-        notify(other_party, Notification.Category.BOOKING, f'Booking #{booking.id} is now {new_status}.')
+        other_party = booking.family if actor_is_caregiver else booking.caregiver
+        notify(other_party, Notification.Category.BOOKING, self._transition_message(
+            booking, new_status, previous_status, actor_is_caregiver,
+        ))
 
         return Response(BookingSerializer(booking).data)
+
+    @staticmethod
+    def _transition_message(booking, new_status, previous_status, actor_is_caregiver):
+        caregiver_name = booking.caregiver.full_name
+        family_name = booking.family.full_name
+        if new_status == Booking.Status.CONFIRMED:
+            return f'{caregiver_name} confirmed your booking.'
+        if new_status == Booking.Status.ONGOING:
+            return f'Your booking with {caregiver_name} is now in progress.'
+        if new_status == Booking.Status.COMPLETED:
+            return f'Your booking with {caregiver_name} is complete. Leave a review!'
+        if new_status == Booking.Status.CANCELLED:
+            if previous_status == Booking.Status.PENDING and actor_is_caregiver:
+                return (f'{caregiver_name} declined the booking. '
+                        'Your request is open again for other caregivers.')
+            if actor_is_caregiver:
+                return (f'{caregiver_name} cancelled booking #{booking.id}. '
+                        'Your request is open again for other caregivers.')
+            return f'{family_name} cancelled booking #{booking.id}.'
+        return f'Booking #{booking.id} is now {new_status}.'

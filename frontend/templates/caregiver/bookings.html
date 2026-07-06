@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Bookings, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
+  <link rel="stylesheet" href="/static/css/components/forms.css" />
   <link rel="stylesheet" href="/static/css/components/navbar.css" />
   <link rel="stylesheet" href="/static/css/components/sidebar.css" />
   <link rel="stylesheet" href="/static/css/components/sections.css" />
@@ -16,6 +17,7 @@
   <link rel="stylesheet" href="/static/css/components/toast.css" />
   <link rel="stylesheet" href="/static/css/components/loading.css" />
   <link rel="stylesheet" href="/static/css/components/empty-state.css" />
+  <link rel="stylesheet" href="/static/css/components/whatsapp.css" />
   <link rel="stylesheet" href="/static/css/pages/caregiver-bookings.css" />
 </head>
 <body data-page="/caregiver/bookings.html">
@@ -41,11 +43,17 @@
     }
   }
 
-  function cancelBooking(id) {
+  // Pending: caregiver is declining a request. Confirmed: cancelling an
+  // accepted arrangement. Both hit the 'cancelled' transition; only the
+  // wording differs, and either way the family's request reopens.
+  function declineOrCancel(id, currentStatus) {
+    const declining = currentStatus === 'pending';
     confirmDialog({
-      title: 'Cancel booking',
-      message: 'Are you sure you want to cancel this booking? This cannot be undone.',
-      confirmLabel: 'Cancel booking',
+      title: declining ? 'Decline request' : 'Cancel booking',
+      message: declining
+        ? 'Decline this booking request? It will reopen for the family to choose another caregiver.'
+        : 'Cancel this confirmed booking? The family will be notified and their request will reopen.',
+      confirmLabel: declining ? 'Decline' : 'Cancel booking',
       danger: true,
       onConfirm: () => updateStatus(id, 'cancelled'),
     });
@@ -63,8 +71,10 @@
             const next = NEXT_ACTION[b.status];
             const buttons = [];
             if (next) buttons.push(`<button class="btn btn-sm btn-primary" data-advance="${b.id}" data-status="${next.status}">${next.label}</button>`);
-            if (b.status === 'pending' || b.status === 'confirmed') buttons.push(`<button class="btn btn-sm" data-cancel="${b.id}">Cancel</button>`);
-            return buttons.join(' ');
+            buttons.push(waButton(b, 'caregiver'));
+            if (b.status === 'pending') buttons.push(`<button class="btn btn-sm btn-danger" data-cancel="${b.id}" data-status="${b.status}">Decline</button>`);
+            else if (b.status === 'confirmed') buttons.push(`<button class="btn btn-sm" data-cancel="${b.id}" data-status="${b.status}">Cancel</button>`);
+            return buttons.filter(Boolean).join(' ');
           } },
       ],
       rows: bookings,
@@ -76,8 +86,9 @@
       btn.addEventListener('click', () => updateStatus(btn.getAttribute('data-advance'), btn.getAttribute('data-status')));
     });
     document.querySelectorAll('[data-cancel]').forEach((btn) => {
-      btn.addEventListener('click', () => cancelBooking(btn.getAttribute('data-cancel')));
+      btn.addEventListener('click', () => declineOrCancel(btn.getAttribute('data-cancel'), btn.getAttribute('data-status')));
     });
+    wireWhatsAppButtons(bookings, 'caregiver');
   }
 
   renderInto('page-content', `

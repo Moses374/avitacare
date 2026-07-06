@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/static/avitacareicon.png" type="image/png" />
   <title>Settings, Avitacare</title>
   <link rel="stylesheet" href="/static/css/components/typography.css" />
   <link rel="stylesheet" href="/static/css/components/buttons.css" />
@@ -17,7 +17,9 @@
 <body data-page="/admin/settings">
 
 <script src="/static/js/icons.js"></script>
+<script src="/static/js/vendor/zod.umd.js"></script>
 <script src="/static/js/app.js"></script>
+<script src="/static/js/validation.js"></script>
 <script>
   mountAppShell('Settings');
 
@@ -27,7 +29,7 @@
       <div class="section-title">Change password</div>
       <div class="section-body padded">
         <div id="password-error" class="error-banner"></div>
-        <form id="password-form" class="password-form">
+        <form id="password-form" class="password-form" novalidate>
           <div class="form-group">
             <label for="old_password">Current password</label>
             <input type="password" id="old_password" required />
@@ -49,14 +51,16 @@
   document.getElementById('password-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError('password-error');
+    const check = validate(ChangePasswordSchema, {
+      old_password: document.getElementById('old_password').value,
+      new_password: document.getElementById('new_password').value,
+      new_password_confirm: document.getElementById('new_password_confirm').value,
+    });
+    if (!applyValidation(check, { banner: 'password-error' })) return;
     try {
       await apiFetch('/auth/change-password/', {
         method: 'POST',
-        body: JSON.stringify({
-          old_password: document.getElementById('old_password').value,
-          new_password: document.getElementById('new_password').value,
-          new_password_confirm: document.getElementById('new_password_confirm').value,
-        }),
+        body: JSON.stringify(check.data),
       });
       toast('Password updated.', 'success');
       document.getElementById('password-form').reset();
